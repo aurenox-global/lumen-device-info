@@ -14,13 +14,17 @@ con una interfaz propia más limpia.
 - **Batería**: nivel, estado, salud, temperatura, voltaje, corriente, potencia e historial.
 - **Sistema**: Android/SDK, parche de seguridad, kernel, build, uptime, ABIs, locale.
 - **Red**: transporte, operador, SIM, IPs, DNS, MTU y señal.
+- **SIM y eSIM**: compatibilidad eUICC, ranuras, SIMs activas y operador (permiso bajo demanda).
+- **Salud de batería**: SoH estimado, capacidad de diseño vs. estimada, ciclos e historial persistente.
 - **Sensores**: lista con fabricante, tipo y valores en vivo.
 - **Apps**: lista buscable con iconos, versión, targetSdk y tamaño del APK.
 - **Tests**: benchmark de CPU (1 hilo / multihilo), memoria y almacenamiento.
 
 ### Web (HTML/CSS/JS · PWA)
 - Misma identidad visual y estructura, usando las APIs reales del navegador.
-- Monitoreo en vivo de FPS, batería, memoria y red.
+- Cada dato marcado como **REAL**, **LIMITADO** o **NO DISPONIBLE**, con el motivo visible.
+- **Pruebas reales**: CPU 1 hilo y multihilo (Web Workers), memoria, almacenamiento (IndexedDB) y GPU.
+- Sensores en vivo con permiso, cámaras/micrófonos bajo demanda y monitoreo de FPS, batería, memoria y red.
 - GPU vía WebGL/WebGPU, sensores con permiso explícito, almacenamiento estimado, UA-CH.
 - Instalable como PWA, tema claro/oscuro, informe copiable/compartible.
 

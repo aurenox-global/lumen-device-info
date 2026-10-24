@@ -2,9 +2,9 @@
 <html lang="es" data-theme="dark">
 <head>
   <meta charset="utf-8">
-  <title>Lumen — Informe del dispositivo</title>
+  <title>Lumen — Informe y pruebas del dispositivo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Lumen: informe local de hardware, batería, red, almacenamiento y APIs del navegador. Sin cuentas, sin publicidad, sin telemetría.">
+  <meta name="description" content="Lumen: informe local de hardware, batería, red, almacenamiento y APIs del navegador, con benchmarks reales ejecutados en el dispositivo. Sin cuentas, sin publicidad, sin telemetría.">
   <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#0A0B0D">
   <meta name="mobile-web-app-capable" content="yes">
@@ -60,6 +60,10 @@
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h13.4M13.4 6.8 18.6 12l-5.2 5.2"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20.2 11.2A8.2 8.2 0 0 0 5.2 6.6L3.4 8.6M3.8 12.8a8.2 8.2 0 0 0 15 4.6l1.8-2"/><path d="M3.4 3.8v4.8h4.8M20.6 20.2v-4.8h-4.8"/></symbol>
     <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M2.6 13.2h3.8l2.4-6.6 3.9 12 2.7-7.7 1.9 2.3h4.1"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8.2 5.4 18.6 12 8.2 18.6z"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.4"/><circle cx="12" cy="12" r="2.4"/><path d="M12 2.6v2.8M12 18.6v2.8M2.6 12h2.8M18.6 12h2.8"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3.2 8.6h3.3l1.6-2.4h7.8l1.6 2.4h3.3v10.2H3.2z"/><circle cx="12" cy="13.2" r="3.4"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9.2" y="2.8" width="5.6" height="10.4" rx="2.8"/><path d="M5.6 11.4a6.4 6.4 0 0 0 12.8 0M12 17.8v3.4M9 21.2h6"/></symbol>
   </svg>
 
   <div class="shell">
@@ -78,13 +82,14 @@
         <a class="nav-link" href="#red" data-nav="red"><svg class="ico" aria-hidden="true"><use href="#i-network"/></svg><span>Red</span><span class="nav-num">04</span></a>
         <a class="nav-link" href="#almacenamiento" data-nav="almacenamiento"><svg class="ico" aria-hidden="true"><use href="#i-storage"/></svg><span>Almacenamiento</span><span class="nav-num">05</span></a>
         <a class="nav-link" href="#sensores" data-nav="sensores"><svg class="ico" aria-hidden="true"><use href="#i-sensor"/></svg><span>Sensores</span><span class="nav-num">06</span></a>
-        <a class="nav-link" href="#navegador" data-nav="navegador"><svg class="ico" aria-hidden="true"><use href="#i-browser"/></svg><span>Navegador</span><span class="nav-num">07</span></a>
+        <a class="nav-link" href="#pruebas" data-nav="pruebas"><svg class="ico" aria-hidden="true"><use href="#i-play"/></svg><span>Pruebas</span><span class="nav-num">07</span></a>
+        <a class="nav-link" href="#navegador" data-nav="navegador"><svg class="ico" aria-hidden="true"><use href="#i-browser"/></svg><span>Navegador</span><span class="nav-num">08</span></a>
       </nav>
 
       <div class="side-foot">
         <span class="local-pill"><span class="dot"></span>100% local</span>
         <p>Sin cuentas, sin anuncios, sin telemetría. Nada sale de este dispositivo.</p>
-        <p class="side-version">Lumen Web · 1.0.0</p>
+        <p class="side-version">Lumen Web · 1.1.0</p>
       </div>
     </aside>
 
@@ -118,6 +123,7 @@
           <a class="chip" href="#red" data-nav="red"><svg class="ico" aria-hidden="true"><use href="#i-network"/></svg>Red</a>
           <a class="chip" href="#almacenamiento" data-nav="almacenamiento"><svg class="ico" aria-hidden="true"><use href="#i-storage"/></svg>Almacenamiento</a>
           <a class="chip" href="#sensores" data-nav="sensores"><svg class="ico" aria-hidden="true"><use href="#i-sensor"/></svg>Sensores</a>
+          <a class="chip" href="#pruebas" data-nav="pruebas"><svg class="ico" aria-hidden="true"><use href="#i-play"/></svg>Pruebas</a>
           <a class="chip" href="#navegador" data-nav="navegador"><svg class="ico" aria-hidden="true"><use href="#i-browser"/></svg>Navegador</a>
         </nav>
       </header>
@@ -128,8 +134,8 @@
           <div class="hero">
             <div class="hero-copy">
               <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>Informe del dispositivo</p>
-              <h1 id="inicio-title"><span id="deviceName">Detectando…</span></h1>
-              <p class="hero-sub" id="deviceSub">Leyendo lo que este navegador puede contar.</p>
+              <h1 id="inicio-title"><span id="deviceName">Leyendo…</span></h1>
+              <p class="hero-sub" id="deviceSub">Consultando lo que este navegador puede medir.</p>
               <div class="tag-row" id="heroTags"></div>
             </div>
             <div class="hero-mark" aria-hidden="true">
@@ -164,6 +170,12 @@
             </article>
           </div>
 
+          <div class="legend" aria-label="Significado de los estados de los datos">
+            <span><span class="st real">REAL</span> medido ahora en este dispositivo</span>
+            <span><span class="st limited">LIMITADO</span> el navegador lo recorta o estima</span>
+            <span><span class="st na">NO DISPONIBLE</span> la API no existe aquí</span>
+          </div>
+
           <article class="card live-card">
             <div class="card-head">
               <h2 class="card-title">Actividad en vivo</h2>
@@ -183,14 +195,14 @@
                 <canvas id="batCanvas" class="spark" height="56" role="img" aria-label="Gráfica en vivo del nivel de batería"></canvas>
               </div>
             </div>
-            <p class="card-note">Medido localmente con <span class="mono">requestAnimationFrame</span> y muestreo cada segundo. Se pausa al ocultar la pestaña.</p>
+            <p class="card-note">FPS medidos con <span class="mono">requestAnimationFrame</span>; RAM y batería muestreadas cada segundo. Se pausa al ocultar la pestaña.</p>
           </article>
 
           <nav class="quick" aria-label="Accesos rápidos">
             <a class="quick-link" href="#hardware"><span class="quick-ico"><svg class="ico" aria-hidden="true"><use href="#i-chip"/></svg></span><span><strong>Hardware</strong><small>CPU, GPU, pantalla</small></span><svg class="ico quick-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-            <a class="quick-link" href="#bateria"><span class="quick-ico"><svg class="ico" aria-hidden="true"><use href="#i-battery"/></svg></span><span><strong>Batería</strong><small>Nivel y carga</small></span><svg class="ico quick-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-            <a class="quick-link" href="#red"><span class="quick-ico"><svg class="ico" aria-hidden="true"><use href="#i-network"/></svg></span><span><strong>Red</strong><small>Calidad de conexión</small></span><svg class="ico quick-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-            <a class="quick-link" href="#navegador"><span class="quick-ico"><svg class="ico" aria-hidden="true"><use href="#i-browser"/></svg></span><span><strong>Navegador</strong><small>APIs y capacidades</small></span><svg class="ico quick-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            <a class="quick-link" href="#pruebas"><span class="quick-ico"><svg class="ico" aria-hidden="true"><use href="#i-play"/></svg></span><span><strong>Pruebas</strong><small>CPU, memoria, GPU</small></span><svg class="ico quick-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            <a class="quick-link" href="#sensores"><span class="quick-ico"><svg class="ico" aria-hidden="true"><use href="#i-sensor"/></svg></span><span><strong>Sensores</strong><small>Movimiento en vivo</small></span><svg class="ico quick-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            <a class="quick-link" href="#navegador"><span class="quick-ico"><svg class="ico" aria-hidden="true"><use href="#i-browser"/></svg></span><span><strong>Navegador</strong><small>APIs y permisos</small></span><svg class="ico quick-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
           </nav>
         </section>
 
@@ -212,7 +224,7 @@
                 <div class="row"><span class="k">Memoria del dispositivo</span><span class="v mono" id="hw-devmem" data-key="Memoria del dispositivo">—</span></div>
                 <div class="row"><span class="k">Heap JS en uso</span><span class="v mono" id="hw-heap" data-key="Heap JS en uso">—</span></div>
               </div>
-              <p class="card-note">Los núcleos y la memoria son aproximaciones que expone el navegador, no lecturas del sistema.</p>
+              <p class="card-note">El número de núcleos y la memoria son valores que el navegador declara, no lecturas del sistema. La arquitectura solo llega por User-Agent Client Hints.</p>
             </article>
 
             <article class="card">
@@ -225,7 +237,7 @@
                 <div class="row stack"><span class="k">WebGPU</span><span class="v mono" id="gpu-webgpu" data-key="WebGPU adaptador">—</span></div>
                 <div class="row"><span class="k">Límite de búfer</span><span class="v mono" id="gpu-buffer" data-key="WebGPU búfer máximo">—</span></div>
               </div>
-              <p class="card-note">Renderer sin enmascarar vía <span class="mono">WEBGL_debug_renderer_info</span>; algunos navegadores lo ocultan por privacidad.</p>
+              <p class="card-note">Renderer sin enmascarar vía <span class="mono">WEBGL_debug_renderer_info</span>; algunos navegadores lo ocultan por privacidad. En navegadores con GPU virtualizada (headless, VM) el valor es el del renderizador por software.</p>
             </article>
 
             <article class="card span-2">
@@ -234,14 +246,14 @@
                 <div class="row"><span class="k">Resolución CSS</span><span class="v mono" id="scr-css" data-key="Pantalla resolución CSS">—</span></div>
                 <div class="row"><span class="k">Resolución física</span><span class="v mono" id="scr-phys" data-key="Pantalla resolución física">—</span></div>
                 <div class="row"><span class="k">Densidad (DPR)</span><span class="v mono" id="scr-dpr" data-key="Pantalla DPR">—</span></div>
-                <div class="row"><span class="k">Refresco estimado</span><span class="v mono" id="scr-refresh" data-key="Pantalla refresco">—</span></div>
+                <div class="row"><span class="k">Refresco medido</span><span class="v mono" id="scr-refresh" data-key="Pantalla refresco">—</span></div>
                 <div class="row"><span class="k">Profundidad de color</span><span class="v mono" id="scr-depth" data-key="Pantalla profundidad">—</span></div>
                 <div class="row"><span class="k">Gama de color</span><span class="v mono" id="scr-gamut" data-key="Pantalla gama">—</span></div>
                 <div class="row"><span class="k">HDR</span><span class="v mono" id="scr-hdr" data-key="Pantalla HDR">—</span></div>
                 <div class="row"><span class="k">Orientación</span><span class="v mono" id="scr-orient" data-key="Pantalla orientación">—</span></div>
                 <div class="row"><span class="k">Puntos táctiles</span><span class="v mono" id="scr-touch" data-key="Pantalla puntos táctiles">—</span></div>
               </div>
-              <p class="card-note" id="refreshNote">El refresco se estima midiendo fotogramas; puede variar con el ahorro de energía.</p>
+              <p class="card-note" id="refreshNote">El refresco se mide contando fotogramas reales durante un segundo; puede bajar con el ahorro de energía o si la pestaña está en segundo plano.</p>
             </article>
 
             <article class="card">
@@ -253,7 +265,7 @@
                 <div class="row"><span class="k">Heap disponible</span><span class="v mono" id="mem-free" data-key="Memoria heap disponible">—</span></div>
               </div>
               <div class="bar" role="img" aria-label="Uso del heap JavaScript" id="memBar"><span class="bar-fill" id="memBarFill"></span></div>
-              <p class="card-note">Solo Chromium expone <span class="mono">performance.memory</span>, y mide el heap de esta pestaña, no la RAM del sistema.</p>
+              <p class="card-note">Solo Chromium expone <span class="mono">performance.memory</span>, y mide el heap de esta pestaña, no la RAM del sistema. La prueba de memoria de la sección Pruebas sí mide velocidad real de escritura y lectura.</p>
             </article>
           </div>
         </section>
@@ -283,7 +295,7 @@
                 <div class="row"><span class="k">Salud</span><span class="v mono" id="bat-health" data-key="Batería salud">—</span></div>
                 <div class="row"><span class="k">Temperatura y voltaje</span><span class="v mono" id="bat-temp" data-key="Batería temperatura y voltaje">—</span></div>
               </div>
-              <p class="card-note">La API puede redondear el nivel (por ejemplo, 100 % → 99 %) y devolver «Infinity» mientras calcula los tiempos.</p>
+              <p class="card-note" id="batNote">La API puede redondear el nivel y devolver «Infinity» mientras calcula los tiempos. No existe una API web para salud, temperatura o voltaje.</p>
             </article>
 
             <article class="card">
@@ -291,7 +303,7 @@
               <canvas id="batDetailCanvas" class="spark spark-tall" height="120" role="img" aria-label="Historial en vivo del nivel de batería"></canvas>
               <div class="rows">
                 <div class="row"><span class="k">Origen del dato</span><span class="v mono">Battery Status API</span></div>
-                <div class="row"><span class="k">Precisión</span><span class="v mono">1 %</span></div>
+                <div class="row"><span class="k">Resolución declarada</span><span class="v mono" id="bat-res">—</span></div>
               </div>
               <p class="card-note">Los fabricantes agrupan los cambios de nivel; una línea plana no significa que la lectura esté rota.</p>
             </article>
@@ -328,8 +340,8 @@
               </div>
               <div class="bar" role="img" aria-label="Calidad de conexión estimada" id="netBar"><span class="bar-fill" id="netBarFill"></span></div>
               <div class="rows">
-                <div class="row"><span class="k">Cambio de red</span><span class="v mono" id="net-live">—</span></div>
-                <div class="row"><span class="k">Origen</span><span class="v mono" id="net-origin">—</span></div>
+                <div class="row"><span class="k">Cambio de red</span><span class="v mono" id="net-live" data-key="Red escucha de cambios">—</span></div>
+                <div class="row"><span class="k">Origen</span><span class="v mono" id="net-origin" data-key="Red origen">—</span></div>
               </div>
               <p class="card-note">La Network Information API solo está disponible en navegadores Chromium; en Safari y Firefox verás «No disponible».</p>
             </article>
@@ -359,14 +371,19 @@
                 <div class="row"><span class="k">Persistente</span><span class="v mono" id="st-persist" data-key="Almacenamiento persistente">—</span></div>
                 <div class="row stack"><span class="k">Desglose</span><span class="v mono" id="st-details" data-key="Almacenamiento desglose">—</span></div>
               </div>
-              <p class="card-note">La cuota es una fracción del disco que el navegador concede a este sitio; puede compartirse entre pestañas.</p>
+              <div class="storage-actions">
+                <button class="btn" id="persistBtn" type="button">Solicitar almacenamiento persistente</button>
+                <span class="storage-action-note" id="persistNote">El navegador decide si concede persistencia; no siempre depende de ti.</span>
+              </div>
+              <p class="card-note">La cuota es una fracción del disco que el navegador concede a este sitio; puede compartirse entre pestañas y no refleja el espacio libre del disco.</p>
             </article>
 
             <article class="card">
               <div class="card-head"><h3 class="card-title">Qué se guarda aquí</h3></div>
-              <p class="body-text">Lumen no escribe datos de medición. Solo persiste tu preferencia de tema y la caché del service worker para funcionar sin conexión.</p>
+              <p class="body-text">Lumen solo persiste tu preferencia de tema, el último resultado de las pruebas y la caché del service worker para funcionar sin conexión.</p>
               <div class="rows">
                 <div class="row"><span class="k">Preferencia de tema</span><span class="v mono">localStorage</span></div>
+                <div class="row"><span class="k">Resultado de pruebas</span><span class="v mono">localStorage</span></div>
                 <div class="row"><span class="k">Caché de la app</span><span class="v mono">Cache Storage</span></div>
                 <div class="row"><span class="k">Cookies</span><span class="v mono">Ninguna</span></div>
                 <div class="row"><span class="k">Analítica</span><span class="v mono">Ninguna</span></div>
@@ -387,26 +404,32 @@
 
           <article class="card sensors-control">
             <div class="sensors-control-copy">
-              <div class="card-head"><h3 class="card-title"><svg class="ico" aria-hidden="true"><use href="#i-sensor"/></svg>Sensores de movimiento</h3></div>
-              <p class="body-text" id="sensorNote">Activa los sensores para ver los valores en vivo. No se envía nada fuera del dispositivo.</p>
-              <p class="sensor-status" id="sensorStatus" role="status" aria-live="polite">Inactivos.</p>
+              <div class="card-head"><h3 class="card-title"><svg class="ico" aria-hidden="true"><use href="#i-sensor"/></svg>Sensores de movimiento</h3><span class="st" id="sensorBadge">sin activar</span></div>
+              <p class="body-text" id="sensorNote">Activa los sensores para ver los valores en vivo. No se envía nada fuera del dispositivo. En escritorio sin sensores, la API existe pero no entrega datos.</p>
+              <p class="sensor-status" id="sensorStatus" role="status" aria-live="polite">Inactivos. Pulsa «Activar sensores».</p>
             </div>
-            <button class="btn primary" id="sensorBtn" type="button">Activar sensores</button>
+            <div class="sensor-actions">
+              <button class="btn primary" id="sensorBtn" type="button">Activar sensores</button>
+              <button class="btn" id="calibrateBtn" type="button" disabled>Poner a cero</button>
+            </div>
           </article>
 
           <div class="grid">
-            <article class="card">
-              <div class="card-head"><h3 class="card-title">Acelerómetro</h3><span class="unit-pill">m/s²</span></div>
+            <article class="card span-2">
+              <div class="card-head"><h3 class="card-title">Acelerómetro en vivo</h3><span class="unit-pill">m/s²</span></div>
+              <canvas id="accCanvas" class="spark spark-graph" height="120" role="img" aria-label="Gráfica en vivo del acelerómetro en tres ejes"></canvas>
+              <div class="graph-legend"><span class="gl-x">X</span><span class="gl-y">Y</span><span class="gl-z">Z</span><span class="graph-samples mono" id="sensorSamples">0 muestras</span></div>
               <div class="axes">
                 <div class="axis"><span class="axis-label">X</span><div class="meter"><span class="meter-fill" id="accxBar"></span></div><span class="axis-val mono" id="acc-x">—</span></div>
                 <div class="axis"><span class="axis-label">Y</span><div class="meter"><span class="meter-fill" id="accyBar"></span></div><span class="axis-val mono" id="acc-y">—</span></div>
                 <div class="axis"><span class="axis-label">Z</span><div class="meter"><span class="meter-fill" id="acczBar"></span></div><span class="axis-val mono" id="acc-z">—</span></div>
               </div>
-              <p class="card-note">Escala ±20 m/s². Incluye la gravedad cuando el navegador la reporta.</p>
+              <p class="card-note">Escala ±20 m/s². Incluye la gravedad cuando el navegador la reporta. «Poner a cero» resta la media de las últimas muestras.</p>
             </article>
 
             <article class="card">
               <div class="card-head"><h3 class="card-title">Giroscopio</h3><span class="unit-pill">°/s</span></div>
+              <canvas id="gyroCanvas" class="spark spark-graph" height="96" role="img" aria-label="Gráfica en vivo del giroscopio en tres ejes"></canvas>
               <div class="axes">
                 <div class="axis"><span class="axis-label">α</span><div class="meter"><span class="meter-fill" id="gyroaBar"></span></div><span class="axis-val mono" id="gyro-a">—</span></div>
                 <div class="axis"><span class="axis-label">β</span><div class="meter"><span class="meter-fill" id="gyrobBar"></span></div><span class="axis-val mono" id="gyro-b">—</span></div>
@@ -426,14 +449,14 @@
             </article>
 
             <article class="card">
-              <div class="card-head"><h3 class="card-title">Brújula</h3></div>
+              <div class="card-head"><h3 class="card-title">Brújula</h3><span class="st" id="compassStatus">sin datos</span></div>
               <div class="compass-wrap">
                 <div class="compass" id="compass" aria-hidden="true">
                   <span class="compass-needle" id="compassNeedle"></span>
                   <span class="compass-n">N</span>
                   <span class="compass-e">E</span>
                   <span class="compass-s">S</span>
-                  <span class="compass-w">W</span>
+                  <span class="compass-w">O</span>
                 </div>
                 <p class="compass-value mono" id="compassValue">—</p>
                 <p class="compass-label" id="compassLabel">Sin rumbo</p>
@@ -443,12 +466,81 @@
           </div>
         </section>
 
-        <!-- 07 Navegador -->
+        <!-- 07 Pruebas -->
+        <section class="section" id="pruebas" data-section="pruebas" aria-labelledby="pruebas-title">
+          <header class="section-head">
+            <p class="kicker">07 — Pruebas</p>
+            <h2 id="pruebas-title">Pruebas</h2>
+            <p class="section-desc">Benchmarks ejecutados ahora mismo en este dispositivo. Cada cifra sale de operaciones reales; si una prueba no puede correr, se explica en lugar de rellenarse con un cero.</p>
+          </header>
+
+          <article class="card tests-run">
+            <div class="tests-run-copy">
+              <div class="card-head"><h3 class="card-title"><svg class="ico" aria-hidden="true"><use href="#i-play"/></svg>Ejecución</h3><span class="st" id="testsStatusBadge">sin ejecutar</span></div>
+              <p class="body-text" id="testStatus" role="status" aria-live="polite">Pulsa «Ejecutar pruebas». Duración aproximada: 4–6 segundos. No se bloquea la interfaz: la CPU se mide en Web Workers.</p>
+              <p class="tests-stamp mono" id="testStamp">Última ejecución: ninguna</p>
+              <p class="tests-delta" id="testDelta">Sin comparación todavía. Se guarda el último resultado en este navegador.</p>
+            </div>
+            <div class="tests-actions">
+              <button class="btn primary" id="runTests" type="button">Ejecutar pruebas</button>
+              <button class="btn" id="rerunTests" type="button" hidden>Repetir prueba</button>
+            </div>
+            <div class="progress" id="testProgress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progreso de las pruebas">
+              <span class="progress-fill" id="testProgressFill"></span>
+            </div>
+          </article>
+
+          <div class="grid tests-grid">
+            <article class="card test-card">
+              <div class="card-head"><h3 class="card-title">CPU · 1 hilo</h3><span class="st" id="cpu1-st">sin ejecutar</span></div>
+              <p class="test-big"><span class="mono" id="cpu1-val">—</span><span class="test-unit">Mops/s</span></p>
+              <div class="bar"><span class="bar-fill" id="cpu1-bar"></span></div>
+              <p class="test-meta" id="cpu1-meta">Sin datos.</p>
+              <p class="test-delta" id="cpu1-delta" hidden></p>
+            </article>
+
+            <article class="card test-card">
+              <div class="card-head"><h3 class="card-title">CPU · multihilo</h3><span class="st" id="cpum-st">sin ejecutar</span></div>
+              <p class="test-big"><span class="mono" id="cpum-val">—</span><span class="test-unit">Mops/s</span></p>
+              <div class="bar"><span class="bar-fill" id="cpum-bar"></span></div>
+              <p class="test-meta" id="cpum-meta">Sin datos.</p>
+              <p class="test-delta" id="cpum-delta" hidden></p>
+            </article>
+
+            <article class="card test-card">
+              <div class="card-head"><h3 class="card-title">Memoria</h3><span class="st" id="mem-st">sin ejecutar</span></div>
+              <p class="test-big"><span class="mono" id="mem-val">—</span><span class="test-unit">MB/s</span></p>
+              <div class="bar"><span class="bar-fill" id="mem-bar"></span></div>
+              <p class="test-meta" id="mem-meta">Sin datos.</p>
+              <p class="test-delta" id="mem-delta" hidden></p>
+            </article>
+
+            <article class="card test-card">
+              <div class="card-head"><h3 class="card-title">Almacenamiento</h3><span class="st" id="stg-st">sin ejecutar</span></div>
+              <p class="test-big"><span class="mono" id="stg-val">—</span><span class="test-unit">MB/s</span></p>
+              <div class="bar"><span class="bar-fill" id="stg-bar"></span></div>
+              <p class="test-meta" id="stg-meta">Sin datos.</p>
+              <p class="test-delta" id="stg-delta" hidden></p>
+            </article>
+
+            <article class="card test-card">
+              <div class="card-head"><h3 class="card-title">GPU · WebGL</h3><span class="st" id="gpu-st">sin ejecutar</span></div>
+              <p class="test-big"><span class="mono" id="gpu-val">—</span><span class="test-unit">draws/s</span></p>
+              <div class="bar"><span class="bar-fill" id="gpu-bar"></span></div>
+              <p class="test-meta" id="gpu-meta">Sin datos.</p>
+              <p class="test-delta" id="gpu-delta" hidden></p>
+            </article>
+          </div>
+
+          <p class="tests-foot">Método: CPU con un bucle entero xorshift de 1,5 s por fase (1 y hasta 8 Web Workers); memoria con escritura y lectura de un <span class="mono">Float64Array</span> de 64 MB; almacenamiento con escritura y lectura de 8 MB en IndexedDB; GPU con 512 × 512 píxeles y <span class="mono">gl.finish()</span> cada lote de dibujos. Las barras usan escala logarítmica; el número es la medida real. La lectura de IndexedDB puede servirse desde la caché en memoria del navegador (la escritura es más representativa), y en GPUs con ejecución diferida el ritmo de draws mide comandos aceptados, no píxeles sombreados. Los valores cambian con el calor y el ahorro de energía: úsalos para comparar este equipo consigo mismo.</p>
+        </section>
+
+        <!-- 08 Navegador -->
         <section class="section" id="navegador" data-section="navegador" aria-labelledby="navegador-title">
           <header class="section-head">
-            <p class="kicker">07 — Capacidades</p>
+            <p class="kicker">08 — Capacidades</p>
             <h2 id="navegador-title">Navegador</h2>
-            <p class="section-desc">Identidad del agente de usuario, datos de alta entropía, permisos y APIs disponibles.</p>
+            <p class="section-desc">Identidad del agente de usuario, datos de alta entropía, códecs, permisos y APIs disponibles.</p>
           </header>
 
           <div class="grid">
@@ -469,6 +561,7 @@
                 <div class="row"><span class="k">Modelo</span><span class="v mono" id="br-model" data-key="Navegador modelo">—</span></div>
                 <div class="row"><span class="k">Arquitectura</span><span class="v mono" id="br-arch" data-key="Navegador arquitectura">—</span></div>
                 <div class="row"><span class="k">Bits</span><span class="v mono" id="br-bits" data-key="Navegador bits">—</span></div>
+                <div class="row"><span class="k">Factor de forma</span><span class="v mono" id="br-form" data-key="Navegador factor de forma">—</span></div>
                 <div class="row"><span class="k">Plataforma clásica</span><span class="v mono" id="br-legacy" data-key="Navegador plataforma clásica">—</span></div>
               </div>
             </article>
@@ -480,10 +573,32 @@
                 <div class="row"><span class="k">Zona horaria</span><span class="v mono" id="br-tz" data-key="Navegador zona horaria">—</span></div>
                 <div class="row"><span class="k">Cookies</span><span class="v mono" id="br-cookies" data-key="Navegador cookies">—</span></div>
                 <div class="row"><span class="k">Do Not Track</span><span class="v mono" id="br-dnt" data-key="Navegador do not track">—</span></div>
-                <div class="row"><span class="k">Dispositivos de media</span><span class="v mono" id="br-media" data-key="Navegador dispositivos de media">—</span></div>
+                <div class="row"><span class="k">WebAssembly</span><span class="v mono" id="br-wasm" data-key="Navegador WebAssembly">—</span></div>
                 <div class="row"><span class="k">Contexto seguro</span><span class="v mono" id="br-secure" data-key="Navegador contexto seguro">—</span></div>
               </div>
-              <p class="card-note">El conteo de dispositivos de media no solicita permiso y puede ocultar etiquetas y dispositivos.</p>
+              <p class="card-note">WebAssembly se valida compilando un módulo mínimo y midiendo el tiempo real de validación.</p>
+            </article>
+
+            <article class="card span-2">
+              <div class="card-head"><h3 class="card-title">Códecs de media</h3><span class="unit-pill" id="codecCount">—</span></div>
+              <p class="body-text">Consultado con <span class="mono">MediaCapabilities.decodingInfo</span>; si no existe, se usa <span class="mono">canPlayType</span>, que solo responde «quizá» o «probablemente» y por eso se marca como limitado.</p>
+              <div class="codec-grid" id="codecGrid"></div>
+            </article>
+
+            <article class="card span-2">
+              <div class="card-head"><h3 class="card-title"><svg class="ico" aria-hidden="true"><use href="#i-camera"/></svg>Cámara y micrófono</h3><span class="st" id="mediaBadge">sin permiso</span></div>
+              <p class="body-text">El navegador oculta los dispositivos hasta que concedes permiso. Al pulsar, se pide acceso, se cuentan los dispositivos reales y se cierra la captura inmediatamente.</p>
+              <div class="media-actions">
+                <button class="btn" id="camBtn" type="button"><svg class="ico" aria-hidden="true"><use href="#i-camera"/></svg>Activar cámara</button>
+                <button class="btn" id="micBtn" type="button"><svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg>Activar micrófono</button>
+              </div>
+              <p class="sensor-status" id="mediaStatus" role="status" aria-live="polite">Sin permiso concedido en esta sesión.</p>
+              <div class="rows">
+                <div class="row"><span class="k">Cámaras detectadas</span><span class="v mono" id="br-cams" data-key="Navegador cámaras">—</span></div>
+                <div class="row"><span class="k">Micrófonos detectados</span><span class="v mono" id="br-mics" data-key="Navegador micrófonos">—</span></div>
+                <div class="row"><span class="k">Salidas de audio</span><span class="v mono" id="br-outs" data-key="Navegador salidas de audio">—</span></div>
+                <div class="row stack"><span class="k">Dispositivos con nombre</span><span class="v mono" id="br-media" data-key="Navegador dispositivos de media">—</span></div>
+              </div>
             </article>
 
             <article class="card span-2">
@@ -504,7 +619,7 @@
       <footer class="site-foot">
         <div class="foot-line">
           <span class="local-pill"><span class="dot"></span>100% local</span>
-          <span>Lumen Web · <span class="mono">1.0.0</span></span>
+          <span>Lumen Web · <span class="mono">1.1.0</span></span>
         </div>
         <p>Inspirado en la información de DevCheck, con interfaz propia. Sin publicidad, sin cuentas, sin telemetría.</p>
         <p class="foot-meta"><span id="footStamp">—</span> · <span class="mono" id="footOrigin">—</span></p>

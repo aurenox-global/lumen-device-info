@@ -1,7 +1,7 @@
 /* Lumen Web — service worker cache-first versionado */
 'use strict';
 
-const CACHE = 'lumen-v1.0.0';
+const CACHE = 'lumen-v1.1.0';
 const ASSETS = [
   './',
   './index.html',

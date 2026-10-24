@@ -1,10 +1,14 @@
 package com.lumen.deviceinfo
 
 import android.app.Application
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.lumen.deviceinfo.data.AppInfo
 import com.lumen.deviceinfo.data.BatteryInfo
+import com.lumen.deviceinfo.data.BatterySample
 import com.lumen.deviceinfo.data.Benchmark
 import com.lumen.deviceinfo.data.BluetoothInfo
 import com.lumen.deviceinfo.data.CameraInfo
@@ -16,6 +20,7 @@ import com.lumen.deviceinfo.data.GpuInfo
 import com.lumen.deviceinfo.data.MemInfo
 import com.lumen.deviceinfo.data.NetworkInfo
 import com.lumen.deviceinfo.data.SensorReader
+import com.lumen.deviceinfo.data.SimInfo
 import com.lumen.deviceinfo.data.StorageInfo
 import com.lumen.deviceinfo.data.SystemInfoModel
 import com.lumen.deviceinfo.ui.theme.ThemeMode
@@ -47,7 +52,9 @@ data class UiState(
     val appsLoaded: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.DARK,
     val cpuHistory: List<Float> = emptyList(),
-    val ramHistory: List<Float> = emptyList()
+    val ramHistory: List<Float> = emptyList(),
+    val batteryHistory: List<BatterySample> = emptyList(),
+    val sim: SimInfo = SimInfo()
 )
 
 class LumenViewModel(app: Application) : AndroidViewModel(app) {
@@ -66,7 +73,9 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
     private val prefs = app.getSharedPreferences("lumen_prefs", android.content.Context.MODE_PRIVATE)
 
     init {
-        _uiState.update { it.copy(themeMode = loadThemeMode()) }
+        _uiState.update {
+            it.copy(themeMode = loadThemeMode(), batteryHistory = loadBatteryHistory())
+        }
         loadStatic()
         sensorReader.loadSensorList()
     }
@@ -137,10 +146,15 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         val storage = reader.readStorage()
         val battery = reader.readBattery()
         val network = reader.readNetwork()
-        val usedPct = if (storage.total != "No disponible") storage.usedPercent else 0f
+        val sim = reader.readSimInfo(hasPhonePermission())
+        val now = System.currentTimeMillis()
         _uiState.update { st ->
             val cpuHist = (st.cpuHistory + cpuUsage).takeLast(40)
             val ramHist = (st.ramHistory + memory.usedPercent).takeLast(40)
+            val batteryHist = if (battery.level >= 0 && !battery.temperatureC.isNaN()) {
+                (st.batteryHistory + BatterySample(now, battery.level, battery.temperatureC))
+                    .takeLast(MAX_BATTERY_SAMPLES)
+            } else st.batteryHistory
             st.copy(
                 cpuUsage = cpuUsage,
                 cpu = cpu,
@@ -148,10 +162,44 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
                 storage = storage,
                 battery = battery,
                 network = network,
+                sim = sim,
                 cpuHistory = cpuHist,
-                ramHistory = ramHist
+                ramHistory = ramHist,
+                batteryHistory = batteryHist
             )
         }
+        saveBatteryHistory(_uiState.value.batteryHistory)
+    }
+
+    fun hasPhonePermission(): Boolean = try {
+        ContextCompat.checkSelfPermission(
+            getApplication(),
+            Manifest.permission.READ_PHONE_STATE
+        ) == PackageManager.PERMISSION_GRANTED
+    } catch (t: Throwable) { false }
+
+    private fun loadBatteryHistory(): List<BatterySample> = try {
+        prefs.getString(KEY_BATTERY_HISTORY, null)
+            ?.lineSequence()
+            ?.mapNotNull { line ->
+                val parts = line.split(',')
+                if (parts.size != 3) return@mapNotNull null
+                val ts = parts[0].toLongOrNull() ?: return@mapNotNull null
+                val level = parts[1].toIntOrNull() ?: return@mapNotNull null
+                val temp = parts[2].toFloatOrNull() ?: return@mapNotNull null
+                if (level !in 0..100 || temp !in -60f..120f) return@mapNotNull null
+                BatterySample(ts, level, temp)
+            }
+            ?.toList()
+            ?.takeLast(MAX_BATTERY_SAMPLES)
+            ?: emptyList()
+    } catch (t: Throwable) { emptyList() }
+
+    private fun saveBatteryHistory(samples: List<BatterySample>) {
+        try {
+            val csv = samples.joinToString("\n") { "${it.ts},${it.level},${it.tempC}" }
+            prefs.edit().putString(KEY_BATTERY_HISTORY, csv).apply()
+        } catch (t: Throwable) { }
     }
 
     fun refreshNow() {
@@ -192,10 +240,21 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         b.appendLine("[Batería]")
         b.appendLine("Nivel: ${st.battery.level}%")
         b.appendLine("Estado: ${st.battery.status}")
-        b.appendLine("Salud: ${st.battery.health}")
+        b.appendLine("Salud del sistema: ${st.battery.health}")
+        b.appendLine("Salud estimada (SoH): ${st.battery.healthInfo.sohPercent} (${st.battery.healthInfo.source})")
+        b.appendLine("Capacidad de diseño: ${st.battery.healthInfo.designMah}")
+        b.appendLine("Capacidad estimada: ${st.battery.healthInfo.estimatedMah}")
+        b.appendLine("Ciclos: ${st.battery.healthInfo.cycles}")
         b.appendLine("Temperatura: ${st.battery.temperature}")
         b.appendLine("Voltaje: ${st.battery.voltage}")
         b.appendLine("Tecnología: ${st.battery.technology}")
+        b.appendLine()
+        b.appendLine("[SIM y eSIM]")
+        b.appendLine("eSIM compatible: ${st.sim.esimSupported}")
+        b.appendLine("eUICC habilitado: ${st.sim.euiccEnabled}")
+        b.appendLine("Ranuras SIM: ${st.sim.slots}")
+        b.appendLine("SIMs activas: ${st.sim.activeCount}")
+        b.appendLine("Permiso: ${st.sim.permission}")
         b.appendLine()
         b.appendLine("[Memoria]")
         b.appendLine("Total: ${st.memory.total}")
@@ -225,5 +284,10 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         b.appendLine("IPv6: ${st.network.ipv6}")
         b.appendLine("DNS: ${st.network.dns}")
         return b.toString()
+    }
+
+    private companion object {
+        const val MAX_BATTERY_SAMPLES = 60
+        const val KEY_BATTERY_HISTORY = "battery_history"
     }
 }

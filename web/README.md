@@ -1,20 +1,45 @@
 # Lumen Web
 
-Informe local del dispositivo desde el navegador. Interfaz minimalista propia inspirada en la información de DevCheck, sin publicidad, sin cuentas, sin cookies y sin telemetría. Todo se calcula en la página; no hay llamadas a servicios externos.
+Informe local del dispositivo desde el navegador, con **benchmarks reales** ejecutados en el equipo. Interfaz minimalista propia inspirada en la información de DevCheck, sin publicidad, sin cuentas, sin cookies y sin telemetría. Todo se calcula en la página; no hay llamadas a servicios externos.
+
+**Versión 1.1.0.** Esta versión sustituye la sensación de demo por mediciones y estados explícitos: cada dato se marca como `REAL`, `LIMITADO` o `NO DISPONIBLE`, con una nota que explica el motivo cuando el navegador recorta, estima u oculta la información.
 
 ## Características
 
-- **Inicio** — dispositivo y sistema detectados, cuatro métricas rápidas (heap JS, almacenamiento, batería, núcleos) y tres gráficas en vivo (FPS, RAM del heap y batería) que se pausan al ocultar la pestaña.
-- **Hardware** — CPU y arquitectura, GPU con renderer WebGL sin enmascarar, adaptador WebGPU cuando existe, pantalla (CSS/física, DPR, refresco estimado, gama, HDR, orientación, táctil) y memoria.
-- **Batería** — nivel, estado, tiempos de carga/descarga e historial en vivo mediante Battery Status API.
-- **Red** — estado, tipo, `effectiveType`, `downlink`, `rtt` y ahorro de datos mediante Network Information API.
-- **Almacenamiento** — uso y cuota del origen con `storage.estimate`, estado persistente y desglose cuando el navegador lo expone.
-- **Sensores** — acelerómetro, giroscopio, orientación y brújula con botón «Activar sensores» (permiso explícito en iOS/iPadOS) y medidores en vivo.
-- **Navegador** — user agent, User-Agent Client Hints de alta entropía, plataforma, idiomas, zona horaria, cookies, DNT, dispositivos de media, permisos consultados sin avisos y compatibilidad de 26 Web APIs.
-- Tema oscuro/claro persistido y sincronizado con `prefers-color-scheme`; «Copiar informe» en JSON; «Compartir» cuando `navigator.share` existe.
-- PWA instalable con manifest, iconos 192/512/maskable y service worker cache-first versionado.
+- **Inicio** — equipo y sistema detectados (modelo UA-CH si existe; si no, «Equipo de escritorio», «Móvil» o «Tablet», nunca un «Mac» sin contexto), cuatro métricas rápidas con su estado y tres gráficas en vivo (FPS, heap JS y batería) que se pausan al ocultar la pestaña.
+- **Hardware** — CPU, arquitectura y plataforma UA-CH, GPU con renderer WebGL sin enmascarar y adaptador WebGPU, pantalla (CSS/física, DPR, refresco **medido con `requestAnimationFrame`**, gama, HDR, orientación, puntos táctiles) y memoria.
+- **Batería** — nivel, estado y tiempos. Si el navegador devuelve el valor fijo `100 % + cargando` típico de equipos sin batería, se marca como limitado y se explica.
+- **Red** — estado, tipo, `effectiveType`, `downlink`, `rtt` y ahorro de datos, siempre como estimación del navegador.
+- **Almacenamiento** — uso y cuota del origen, desglose y botón para solicitar `navigator.storage.persist()` con explicación del resultado.
+- **Sensores** — acelerómetro y giroscopio con gráficas en vivo de tres ejes, valores numéricos, brújula y botón **«Poner a cero»** que resta la media de las últimas muestras. Permiso explícito en iOS/iPadOS. Si la API existe pero no llegan datos (habitual en escritorio), se dice claramente.
+- **Pruebas** — benchmarks ejecutables con un clic real:
+  - CPU 1 hilo y multihilo con Web Workers (hasta 8), bucle entero de 1,5 s por fase, puntuación en Mops/s, repeticiones y eficiencia de escalado.
+  - Memoria: escritura y lectura de un `Float64Array` de 64 MB, en MB/s.
+  - Almacenamiento: escritura y lectura de 8 MB en IndexedDB, con verificación del bloque, en MB/s.
+  - GPU: WebGL 2/1 con 512 × 512 píxeles, `gl.finish()` por lotes, draws/s y MPix/s.
+  - Barra de progreso, botones bloqueados mientras corre, resultado guardado en `localStorage` y comparación porcentual con la ejecución anterior.
+- **Navegador** — UA completo, UA-CH de alta entropía, plataforma, zona horaria, idiomas, WebAssembly validado, códecs con `MediaCapabilities` (o `canPlayType` marcado como limitado), permisos y 28 Web APIs.
+- **Cámara y micrófono** — petición de permiso bajo demanda con `getUserMedia`, conteo real de dispositivos y cierre inmediato de la captura. Si se deniega, se explica el error.
+- Tema oscuro/claro persistido, «Copiar informe» en JSON (incluye el estado de cada dato y el último resultado de las pruebas), «Compartir» si existe `navigator.share`.
+- PWA instalable con manifest, iconos 192/512/maskable y service worker cache-first versionado (`lumen-v1.1.0`).
 
-Cada dato no disponible se muestra como «No disponible» con el motivo en el `title`/`aria-label` del valor (enfocable con teclado), nunca como un error de consola.
+## Verificación real
+
+Servido con `python3 -m http.server 8899` y controlado por CDP con Brave 155 (Chrome 155) en un MacBook Pro M1 Pro, macOS 26.5.1:
+
+- `index.html`, `styles.css`, `app.js`, `sw.js`, `manifest.webmanifest`, `favicon.svg` e iconos: **HTTP 200**.
+- Carga a **390 × 844** y **1440 × 900**; consola **sin errores**.
+- **360 px**: `document.documentElement.scrollWidth === innerWidth` (360 = 360), sin scroll horizontal.
+- Pruebas ejecutadas con clic real en el botón (CDP `Input.dispatchMouseEvent`), dos veces seguidas:
+  - CPU 1 hilo: **≈ 1380 Mops/s** · 6902 repeticiones · 1,5 s.
+  - CPU multihilo: **≈ 10 405 Mops/s** con 8 hilos · eficiencia 94 %.
+  - Memoria: **≈ 6154 MB/s escritura**, 6214 MB/s lectura · 64 MB.
+  - Almacenamiento: **≈ 1176 MB/s escritura**, 20 000 MB/s lectura · 8 MB IndexedDB verificado.
+  - GPU: **≈ 692 758 draws/s**, 181 602 MPix/s · ANGLE Metal Renderer Apple M1 Pro.
+  - Repetición: comparación mostrada (`CPU 1 hilo +1,2 %`, `GPU −1 %`, etc.) y `lumen-tests-prev-v1` guardado.
+- Capturas actualizadas: `../shots/web-mobile.png`, `../shots/web-desktop.png`, `../shots/web-tests.png` y `../shots/web-360.png`.
+
+Los números son de esa máquina y esa sesión; sirven para comparar el equipo consigo mismo, no como ranking entre dispositivos.
 
 ## Estructura
 
@@ -43,38 +68,29 @@ cd web
 python3 -m http.server 8899
 ```
 
-Abre <http://localhost:8899>. El service worker y el manifest solo se activan en `https` o `localhost`/`127.0.0.1`. Abrir el archivo con `file://` también funciona para consultar todos los datos; el navegador no permite instalar la PWA ni registrar el service worker desde `file://`.
+Abre <http://localhost:8899>. El service worker y el manifest solo se activan en `https` o `localhost`/`127.0.0.1`. Abrir el archivo con `file://` también funciona para consultar datos; el navegador no permite instalar la PWA ni registrar el service worker desde `file://`.
 
 ## Publicar en GitHub Pages
 
-Sube el contenido de `web/` (no la carpeta padre) a la rama de Pages o a `/docs`. No hace falta compilar ni configurar nada: todas las rutas son relativas (`./`). Para actualizar una versión ya cacheada, cambia el nombre de `CACHE` en `sw.js` (por ejemplo `lumen-v1.0.1`) para invalidar la caché anterior.
+Sube el contenido de `web/` (no la carpeta padre) a la rama de Pages o a `/docs`. No hace falta compilar ni configurar nada: todas las rutas son relativas (`./`). Para invalidar una versión cacheada, cambia el nombre de `CACHE` en `sw.js`.
 
 ## Limitaciones reales del navegador
 
-- No se puede leer el modelo de CPU, el SoC, la salud/temperatura/voltaje de la batería ni el almacenamiento físico total. La RAM es `performance.memory` (heap de la pestaña, solo Chromium) y `navigator.deviceMemory` (valor aproximado y redondeado).
-- La Battery Status API no existe en Safari/Firefox; el nivel puede redondearse y los tiempos devolver `Infinity`.
-- Network Information API solo está en navegadores Chromium y algunos derivados la desactivan (Brave Shields, por ejemplo); no es una prueba de velocidad.
-- La cuota de almacenamiento es la del origen web, no la del disco. El desglose por tipo no está disponible en todos los navegadores.
-- Los sensores dependen del hardware y del permiso. En escritorio es normal que no lleguen datos; en iOS/iPadOS el permiso exige un toque y un contexto seguro.
-- Los permisos consultados y las APIs presentes cambian según navegador y versión; «Preguntar» no concede nada por sí solo.
-- Chrome en macOS congela parte del user agent (macOS 10.15.7) y los Client Hints solo están en Chromium.
+- No se puede leer el modelo de CPU/SoC, la salud, temperatura o voltaje de la batería ni el almacenamiento físico total. `navigator.deviceMemory` es un valor redondeado y `performance.memory` mide solo el heap de la pestaña (Chromium).
+- La Battery Status API no existe en Safari/Firefox. En equipos de escritorio sin batería algunos navegadores devuelven un valor fijo; Lumen lo marca como limitado.
+- Network Information API solo está en navegadores Chromium y algunos derivados la desactivan (Brave Shields). No es una prueba de velocidad.
+- La cuota de almacenamiento es la del origen web, no la del disco.
+- Los sensores dependen del hardware y del permiso. En escritorio es normal que la API exista pero no entregue muestras; en iOS/iPadOS el permiso exige un toque y un contexto seguro. La brújula requiere magnetómetro.
+- La lectura de IndexedDB puede servirse desde la caché en memoria del navegador; la cifra de escritura es la más representativa del almacenamiento. En GPUs con ejecución diferida, los draws/s miden comandos aceptados por el driver, no píxeles sombreados.
+- Los valores de los benchmarks varían con el calor, el ahorro de energía y la carga del sistema. El navegador headless usa ANGLE/Metal o SwiftShader, no necesariamente el mismo camino que una ventana normal.
+- `MediaCapabilities` no está en todos los navegadores; cuando falta se usa `canPlayType`, que solo responde «quizá» y se marca como limitado.
+- Chrome en macOS congela parte del user agent (macOS 10.15.7); los Client Hints de alta entropía dan la versión real cuando están disponibles.
+- Permisos y APIs presentes cambian según navegador y versión; «Preguntar» no concede nada por sí solo.
 
 ## Accesibilidad
 
-Contraste AA en ambos temas, foco visible, navegación por teclado, `aria-label` en controles de icono, `aria-current` en la navegación, regiones etiquetadas y respeto por `prefers-reduced-motion`.
-
-## Verificación
-
-Probado con Brave 155 (Chromium) servido en `http://127.0.0.1:8899` y controlado por CDP:
-
-- `index.html`, `styles.css`, `app.js`, `manifest.webmanifest`, `sw.js` e iconos: HTTP 200.
-- Capturas a 390×844 y 1440×900 en `../shots/web-mobile.png` y `../shots/web-desktop.png`; también 360×800 (`web-360.png`) y tema claro (`web-mobile-light.png`, `web-desktop-light.png`).
-- Sin overflow horizontal (`document.scrollWidth === innerWidth`) a 360, 390 y 1440 px.
-- Consola sin errores; solo un aviso del navegador al abrir con `file://` sobre cookies, que no afecta a la app.
-- Informe copiado verificado como JSON válido (2.001 caracteres) en el portapapeles.
-- Service worker activo y recarga sin conexión funcionando.
-- `file://` carga correctamente estilos, datos y secciones; el manifest se inyecta solo por HTTP para evitar el error CORS del protocolo local.
+Contraste AA en ambos temas, foco visible, navegación por teclado, `aria-label` en controles de icono, `aria-current` en la navegación, estados con texto (no solo color), regiones etiquetadas y respeto por `prefers-reduced-motion`.
 
 ## Créditos
 
-Inspirado en la información que muestra DevCheck (flar2). Diseño, código e iconografía propios. Lumen Web 1.0.0.
+Inspirado en la información que muestra DevCheck (flar2). Diseño, código e iconografía propios. Lumen Web 1.1.0.

@@ -97,7 +97,45 @@ data class BatteryInfo(
     val power: String = NA,
     val technology: String = NA,
     val capacity: String = NA,
-    val chargeCounter: String = NA
+    val chargeCounter: String = NA,
+    val temperatureC: Float = Float.NaN,
+    val healthInfo: BatteryHealth = BatteryHealth()
+)
+
+/**
+ * Salud real de la batería (SoH). Todos los campos son Strings formateados o [NA]:
+ * nunca se rellena un valor que el dispositivo no haya expuesto.
+ */
+data class BatteryHealth(
+    val sohPercent: String = NA,
+    /** 0..N si se pudo calcular; -1 si no. Solo para pintar el indicador. */
+    val sohValue: Float = -1f,
+    val designMah: String = NA,
+    val estimatedMah: String = NA,
+    val cycles: String = NA,
+    /** sysfs | BatteryManager | no disponible */
+    val source: String = "no disponible",
+    val note: String = "El fabricante no expone la capacidad real; requiere Shizuku o root.",
+    val remaining: String = NA
+)
+
+/** Muestra del historial de batería (se persiste en SharedPreferences). */
+data class BatterySample(
+    val ts: Long,
+    val level: Int,
+    val tempC: Float
+)
+
+/** Compatibilidad SIM/eSIM. Sin privilegios solo se puede leer la parte pública. */
+data class SimInfo(
+    val esimSupported: String = NA,
+    val euiccEnabled: String = NA,
+    val slots: String = NA,
+    val activeCount: String = NA,
+    /** No solicitado | Concedido | No concedido */
+    val permission: String = "No solicitado",
+    val subscriptions: List<String> = emptyList(),
+    val note: String = "Leer el EID o los perfiles eSIM requiere privilegios del operador o del sistema."
 )
 
 data class SystemInfoModel(

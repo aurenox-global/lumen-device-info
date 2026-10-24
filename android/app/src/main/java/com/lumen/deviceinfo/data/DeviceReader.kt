@@ -23,7 +23,9 @@ import android.os.Environment
 import android.os.StatFs
 import android.os.SystemClock
 import android.telephony.SignalStrength
+import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
+import android.telephony.euicc.EuiccManager
 import android.util.DisplayMetrics
 import android.view.Display
 import androidx.core.content.ContextCompat
@@ -300,11 +302,233 @@ class DeviceReader(private val context: Context) {
                 "%.2f W".format(w)
             } else NA
             val capacityUa = safeInt { bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER) } ?: Int.MIN_VALUE
-            val capacityStr = if (capacityUa != Int.MIN_VALUE) "%.0f mAh".format(capacityUa / 1000f) else NA
+            val capacityStr = if (capacityUa != Int.MIN_VALUE && capacityUa > 0) "%.0f mAh".format(capacityUa / 1000f) else NA
             val technology = i?.getStringExtra(BatteryManager.EXTRA_TECHNOLOGY) ?: NA
+            val tempC = if (temp > -1) temp / 10f else Float.NaN
+            val healthInfo = readBatteryHealth(pct, bm, i, capacityUa)
 
-            BatteryInfo(pct, statusStr, healthStr, pluggedStr, tempStr, voltStr, currentStr, powerStr, technology, capacityStr, capacityStr)
+            BatteryInfo(
+                level = pct,
+                status = statusStr,
+                health = healthStr,
+                plugged = pluggedStr,
+                temperature = tempStr,
+                voltage = voltStr,
+                current = currentStr,
+                power = powerStr,
+                technology = technology,
+                capacity = capacityStr,
+                chargeCounter = capacityStr,
+                temperatureC = tempC,
+                healthInfo = healthInfo
+            )
         } catch (e: Exception) { BatteryInfo() }
+    }
+
+    /**
+     * Salud de la batería sin root: sysfs (charge_full / charge_full_design o energy_*)
+     * y, como alternativa, el contador de carga de BatteryManager contra la capacidad
+     * de diseño que exponga PowerProfile. Nunca inventa: si no hay datos, devuelve NA.
+     */
+    private fun readBatteryHealth(
+        pct: Int,
+        bm: BatteryManager,
+        intent: Intent?,
+        counterUa: Int
+    ): BatteryHealth {
+        var sysfsFullUah = 0L
+        var sysfsDesignUah = 0L
+        var sysfsCycles: Int? = null
+        var sysfsUsed = false
+
+        for (base in SYSFS_BATTERY_PATHS) {
+            // Algunos fabricantes exponen charge_* (µAh) y otros energy_* (µWh).
+            val chargeFull = readLongIfReadable(base + "charge_full")
+            val chargeDesign = readLongIfReadable(base + "charge_full_design")
+            val energyFull = readLongIfReadable(base + "energy_full")
+            val energyDesign = readLongIfReadable(base + "energy_full_design")
+
+            if (sysfsFullUah <= 0L || sysfsDesignUah <= 0L) {
+                val full = when {
+                    chargeFull != null && chargeDesign != null -> normalizeToMicro(chargeFull)
+                    energyFull != null && energyDesign != null -> normalizeToMicro(energyFull)
+                    else -> 0L
+                }
+                val design = when {
+                    chargeFull != null && chargeDesign != null -> normalizeToMicro(chargeDesign)
+                    energyFull != null && energyDesign != null -> normalizeToMicro(energyDesign)
+                    else -> 0L
+                }
+                if (full in MIN_CAPACITY_UAH..MAX_CAPACITY_UAH &&
+                    design in MIN_CAPACITY_UAH..MAX_CAPACITY_UAH
+                ) {
+                    sysfsFullUah = full
+                    sysfsDesignUah = design
+                    sysfsUsed = true
+                }
+            }
+
+            if (sysfsCycles == null) {
+                val c = readLongIfReadable(base + "cycle_count")
+                if (c != null && c in 0..20_000) sysfsCycles = c.toInt()
+            }
+        }
+
+        val cyclesFromIntent = if (Build.VERSION.SDK_INT >= 34) {
+            try {
+                if (intent?.hasExtra(BatteryManager.EXTRA_CYCLE_COUNT) == true) {
+                    intent.getIntExtra(BatteryManager.EXTRA_CYCLE_COUNT, -1).takeIf { it >= 0 }
+                } else null
+            } catch (t: Throwable) { null }
+        } else null
+        val cycles = sysfsCycles ?: cyclesFromIntent
+
+        val designFromProfile = readDesignCapacityMah()
+        val counterEstimateUah =
+            if (counterUa > 0 && pct in 1..100) counterUa.toDouble() * 100.0 / pct else null
+
+        // Descartamos contadores absurdos (p. ej. el stub de 10 mAh del emulador):
+        // una batería de teléfono no baja de ~300 mAh ni sube de 30 Ah.
+        val counterPlausible = counterEstimateUah != null &&
+            counterEstimateUah / 1000.0 in 300.0..30_000.0
+        val estimatedUah = when {
+            sysfsFullUah > 0L -> sysfsFullUah.toDouble()
+            counterPlausible -> counterEstimateUah
+            else -> null
+        }
+        val designUah = when {
+            sysfsDesignUah > 0L -> sysfsDesignUah.toDouble()
+            designFromProfile != null -> designFromProfile * 1000.0
+            else -> null
+        }
+
+        var soh: Double? = null
+        if (estimatedUah != null && designUah != null && designUah > 0) {
+            val ratio = estimatedUah / designUah * 100.0
+            // Descartamos ratios imposibles (lecturas corruptas o unidades raras).
+            if (ratio in 20.0..150.0) soh = ratio
+        }
+
+        val source = when {
+            sysfsUsed && soh != null -> "sysfs"
+            estimatedUah != null && designUah != null && soh != null -> "BatteryManager"
+            else -> "no disponible"
+        }
+        val note = when (source) {
+            "sysfs" -> "Leído de /sys/class/power_supply (sin root)."
+            "BatteryManager" -> "Estimación con el contador de carga y la capacidad de diseño; puede variar."
+            else -> "El fabricante no expone la capacidad real; requiere Shizuku o root."
+        }
+
+        val remainingMs = try {
+            if (Build.VERSION.SDK_INT >= 28) bm.computeChargeTimeRemaining() else -1L
+        } catch (t: Throwable) { -1L }
+        val remaining = if (remainingMs > 0) formatDuration(remainingMs) else NA
+
+        return BatteryHealth(
+            sohPercent = soh?.let { "%.0f%%".format(it) } ?: NA,
+            sohValue = soh?.toFloat() ?: -1f,
+            designMah = designUah?.let { "%.0f mAh".format(it / 1000.0) } ?: NA,
+            estimatedMah = estimatedUah?.let { "%.0f mAh".format(it / 1000.0) } ?: NA,
+            cycles = cycles?.toString() ?: NA,
+            source = source,
+            note = note,
+            remaining = remaining
+        )
+    }
+
+    /** Capacidad de diseño vía android.os.PowerProfile (API oculta, puede fallar). */
+    private fun readDesignCapacityMah(): Double? {
+        return try {
+            val cls = Class.forName("android.os.PowerProfile")
+            val profile = cls.getConstructor(Context::class.java).newInstance(context)
+            val value = cls.getMethod("getBatteryCapacity").invoke(profile)
+            (value as? Number)?.toDouble()?.takeIf { it in 100.0..30_000.0 }
+        } catch (t: Throwable) { null }
+    }
+
+    /** sysfs usa µAh/µWh; algunos drivers publican mAh/mWh. Normalizamos a micro. */
+    private fun normalizeToMicro(value: Long): Long =
+        if (value in 1..999_999L) value * 1000L else value
+
+    private fun formatDuration(ms: Long): String {
+        val totalMin = (ms / 60_000L).toInt()
+        if (totalMin <= 0) return NA
+        val h = totalMin / 60
+        val m = totalMin % 60
+        return if (h > 0) "${h}h ${m}m" else "${m}m"
+    }
+
+    /**
+     * Datos públicos de SIM/eSIM. getActiveSubscriptionInfoList y el operador
+     * requieren READ_PHONE_STATE; sin permiso se devuelve NA. El EID y los
+     * perfiles eSIM no son accesibles para una app normal.
+     */
+    fun readSimInfo(hasPhonePermission: Boolean): SimInfo {
+        val pm = context.packageManager
+        val esimSupported = try {
+            if (Build.VERSION.SDK_INT >= 28) {
+                if (pm.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_EUICC)) "Sí" else "No"
+            } else NA
+        } catch (t: Throwable) { NA }
+
+        val euiccEnabled = try {
+            if (Build.VERSION.SDK_INT >= 28) {
+                val mgr = context.getSystemService(EuiccManager::class.java)
+                when {
+                    mgr == null -> NA
+                    mgr.isEnabled -> "Sí"
+                    else -> "No"
+                }
+            } else NA
+        } catch (t: Throwable) { NA }
+
+        val tm = try {
+            context.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager
+        } catch (t: Throwable) { null }
+        val slots = try {
+            val count = when {
+                tm == null -> -1
+                Build.VERSION.SDK_INT >= 30 -> {
+                    // getSimCount() no está en el SDK público de compilación; reflexión + fallback.
+                    val viaReflection = try {
+                        tm.javaClass.getMethod("getSimCount").invoke(tm) as? Int
+                    } catch (t: Throwable) { null }
+                    viaReflection ?: tm.phoneCount
+                }
+                else -> tm.phoneCount
+            }
+            if (count >= 0) count.toString() else NA
+        } catch (t: Throwable) { NA }
+
+        var activeCount = NA
+        var subs: List<String> = emptyList()
+        if (hasPhonePermission) {
+            try {
+                val sm = context.getSystemService(SubscriptionManager::class.java)
+                val list = sm?.activeSubscriptionInfoList ?: emptyList()
+                activeCount = list.size.toString()
+                subs = list.map { info ->
+                    val carrier = try { info.carrierName?.toString()?.takeIf { it.isNotBlank() } } catch (t: Throwable) { null }
+                    val slot = info.simSlotIndex
+                    val slotLabel = if (slot >= 0) "ranura ${slot + 1}" else "ranura ?"
+                    val type = if (Build.VERSION.SDK_INT >= 29 && info.isEmbedded) "eSIM" else "SIM física"
+                    "${carrier ?: "Operador desconocido"} · $slotLabel · $type"
+                }
+            } catch (t: Throwable) {
+                activeCount = NA
+                subs = emptyList()
+            }
+        }
+
+        return SimInfo(
+            esimSupported = esimSupported,
+            euiccEnabled = euiccEnabled,
+            slots = slots,
+            activeCount = activeCount,
+            permission = if (hasPhonePermission) "Concedido" else "No concedido",
+            subscriptions = subs
+        )
     }
 
     fun readSystem(): SystemInfoModel {
@@ -451,11 +675,24 @@ class DeviceReader(private val context: Context) {
     companion object {
         @Volatile private var lastCpuIdle = 0L
         @Volatile private var lastCpuTotal = 0L
+
+        private val SYSFS_BATTERY_PATHS = listOf(
+            "/sys/class/power_supply/battery/",
+            "/sys/class/power_supply/bms/"
+        )
+        private const val MIN_CAPACITY_UAH = 100_000L      // 100 mAh
+        private const val MAX_CAPACITY_UAH = 30_000_000L   // 30 Ah
     }
 
     private fun safe(block: () -> String?): String? = try { block() } catch (e: Exception) { null }
 
     private fun safeInt(block: () -> Int): Int? = try { block() } catch (e: Exception) { null }
+
+    private fun readLongIfReadable(path: String): Long? = try {
+        val f = File(path)
+        if (!f.exists() || !f.canRead()) null
+        else f.readText().trim().toLongOrNull()
+    } catch (t: Throwable) { null }
 
     private fun readFile(path: String): String? = try {
         val s = File(path).readText().trim()
