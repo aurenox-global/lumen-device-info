@@ -1,0 +1,14 @@
+# Build / IDE
+.gradle/
+build/
+**/build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+captures/
+*.hprof
+
+# Android
+*.apk.idsig
+!lumen-debug.apk

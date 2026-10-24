@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <title>Lumen — Informe del dispositivo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Lumen: informe local de hardware, batería, red, almacenamiento y APIs del navegador. Sin cuentas, sin publicidad, sin telemetría.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0A0B0D">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Lumen">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('lumen-theme');
+        var dark = stored ? stored === 'dark' : !window.matchMedia('(prefers-color-scheme: light)').matches;
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', dark ? '#0A0B0D' : '#F7F8F9');
+      } catch (e) {
+        document.documentElement.dataset.theme = 'dark';
+      }
+      // El manifest no se puede cargar desde file:// (CORS); se añade solo servido por HTTP.
+      if (location.protocol === 'http:' || location.protocol === 'https:') {
+        var manifest = document.createElement('link');
+        manifest.rel = 'manifest';
+        manifest.href = 'manifest.webmanifest';
+        document.head.appendChild(manifest);
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+
+  <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 10.4 12 3.5l8.5 6.9V20a.6.6 0 0 1-.6.6h-4.8v-6.1H9v6.1H4.1a.6.6 0 0 1-.6-.6z"/></symbol>
+    <symbol id="i-chip" viewBox="0 0 24 24"><rect x="6.2" y="6.2" width="11.6" height="11.6" rx="2.2"/><path d="M9.5 9.5h5v5h-5z"/><path d="M9 2.8v3.4M15 2.8v3.4M9 17.8v3.4M15 17.8v3.4M2.8 9h3.4M2.8 15h3.4M17.8 9h3.4M17.8 15h3.4"/></symbol>
+    <symbol id="i-battery" viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="16.5" height="9" rx="2.4"/><path d="M21.5 10.6v2.8M6 10.8v2.4M9.2 10.8v2.4M12.4 10.8v2.4"/></symbol>
+    <symbol id="i-network" viewBox="0 0 24 24"><path d="M3.8 9.2a12.4 12.4 0 0 1 16.4 0M6.9 12.7a8 8 0 0 1 10.2 0M10 16.2a3.6 3.6 0 0 1 4 0"/><circle cx="12" cy="19.4" r=".9" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-storage" viewBox="0 0 24 24"><ellipse cx="12" cy="5.7" rx="7.6" ry="2.9"/><path d="M4.4 5.7v6.1c0 1.6 3.4 2.9 7.6 2.9s7.6-1.3 7.6-2.9V5.7M4.4 11.8v6.1c0 1.6 3.4 2.9 7.6 2.9s7.6-1.3 7.6-2.9v-6.1"/></symbol>
+    <symbol id="i-sensor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.6"/><path d="M7.4 7.4a6.5 6.5 0 0 0 0 9.2M16.6 7.4a6.5 6.5 0 0 1 0 9.2M4.4 4.4a10.8 10.8 0 0 0 0 15.2M19.6 4.4a10.8 10.8 0 0 1 0 15.2"/></symbol>
+    <symbol id="i-browser" viewBox="0 0 24 24"><rect x="3" y="4.2" width="18" height="15.6" rx="2.6"/><path d="M3 9h18"/><path d="M6 6.6h.01M8.6 6.6h.01M11.2 6.6h.01"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.4 14.8A8.8 8.8 0 0 1 9.2 3.6a8.8 8.8 0 1 0 11.2 11.2z"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.6" y="8.6" width="11.4" height="11.4" rx="2.2"/><path d="M15.4 8.6V6.2A2.2 2.2 0 0 0 13.2 4H6.2A2.2 2.2 0 0 0 4 6.2v7a2.2 2.2 0 0 0 2.2 2.2h2.4"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15.2V3.6M8.2 7.4 12 3.6l3.8 3.8M5.2 13.2v5.6a2 2 0 0 0 2 2h9.6a2 2 0 0 0 2-2v-5.6"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="6.6" y="6.6" width="10.8" height="10.8" rx="1.8"/><path d="M10 10h4v4h-4z"/></symbol>
+    <symbol id="i-gpu" viewBox="0 0 24 24"><rect x="2.8" y="6" width="18.4" height="11.4" rx="2.2"/><circle cx="8.6" cy="11.7" r="2"/><path d="M13.4 9.7h5M13.4 12h5M13.4 14.3h3.4M2.8 17.4v2.2M6.4 17.4v2.2"/></symbol>
+    <symbol id="i-display" viewBox="0 0 24 24"><rect x="2.8" y="4.2" width="18.4" height="12.2" rx="2.2"/><path d="M9 20.2h6M12 16.4v3.8"/></symbol>
+    <symbol id="i-ram" viewBox="0 0 24 24"><rect x="2.6" y="7" width="18.8" height="9" rx="1.6"/><path d="M6 10.2v2.6M9 10.2v2.6M12 10.2v2.6M15 10.2v2.6M18 10.2v2.6M6.4 16v1.8M10.2 16v1.8M13.8 16v1.8M17.6 16v1.8"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.6 2.6 5.4 13.4h5.3l-.9 8 8.4-11h-5.4z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.6 12.4 9.6 17.4 19.6 6.8"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.4 6.4l11.2 11.2M17.6 6.4 6.4 17.6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h13.4M13.4 6.8 18.6 12l-5.2 5.2"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20.2 11.2A8.2 8.2 0 0 0 5.2 6.6L3.4 8.6M3.8 12.8a8.2 8.2 0 0 0 15 4.6l1.8-2"/><path d="M3.4 3.8v4.8h4.8M20.6 20.2v-4.8h-4.8"/></symbol>
+    <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M2.6 13.2h3.8l2.4-6.6 3.9 12 2.7-7.7 1.9 2.3h4.1"/></symbol>
+  </svg>
+
+  <div class="shell">
+    <aside class="sidebar" aria-label="Navegación principal">
+      <a class="brand" href="#inicio" aria-label="Lumen, inicio">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-pulse"/></svg>
+        </span>
+        <span class="brand-word">Lumen</span>
+      </a>
+
+      <nav class="side-nav" aria-label="Secciones del informe">
+        <a class="nav-link" href="#inicio" data-nav="inicio"><svg class="ico" aria-hidden="true"><use href="#i-home"/></svg><span>Inicio</span><span class="nav-num">01</span></a>
+        <a class="nav-link" href="#hardware" data-nav="hardware"><svg class="ico" aria-hidden="true"><use href="#i-chip"/></svg><span>Hardware</span><span class="nav-num">02</span></a>
+        <a class="nav-link" href="#bateria" data-nav="bateria"><svg class="ico" aria-hidden="true"><use href="#i-battery"/></svg><span>Batería</span><span class="nav-num">03</span></a>
+        <a class="nav-link" href="#red" data-nav="red"><svg class="ico" aria-hidden="true"><use href="#i-network"/></svg><span>Red</span><span class="nav-num">04</span></a>
+        <a class="nav-link" href="#almacenamiento" data-nav="almacenamiento"><svg class="ico" aria-hidden="true"><use href="#i-storage"/></svg><span>Almacenamiento</span><span class="nav-num">05</span></a>
+        <a class="nav-link" href="#sensores" data-nav="sensores"><svg class="ico" aria-hidden="true"><use href="#i-sensor"/></svg><span>Sensores</span><span class="nav-num">06</span></a>
+        <a class="nav-link" href="#navegador" data-nav="navegador"><svg class="ico" aria-hidden="true"><use href="#i-browser"/></svg><span>Navegador</span><span class="nav-num">07</span></a>
+      </nav>
+
+      <div class="side-foot">
+        <span class="local-pill"><span class="dot"></span>100% local</span>
+        <p>Sin cuentas, sin anuncios, sin telemetría. Nada sale de este dispositivo.</p>
+        <p class="side-version">Lumen Web · 1.0.0</p>
+      </div>
+    </aside>
+
+    <div class="content">
+      <header class="topbar">
+        <div class="topbar-inner">
+          <a class="brand brand-mobile" href="#inicio" aria-label="Lumen, inicio">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-pulse"/></svg>
+            </span>
+            <span class="brand-word">Lumen</span>
+          </a>
+          <p class="topbar-context" id="reportStamp">Informe local · <span class="mono" id="stampTime">—</span></p>
+          <div class="actions">
+            <button class="btn icon-btn" id="themeToggle" type="button" aria-label="Cambiar a tema claro" title="Cambiar tema">
+              <svg class="ico theme-ico theme-ico-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+              <svg class="ico theme-ico theme-ico-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+            </button>
+            <button class="btn" id="copyBtn" type="button" aria-label="Copiar informe como JSON" title="Copiar informe JSON">
+              <svg class="ico" aria-hidden="true"><use href="#i-copy"/></svg><span class="btn-label">Copiar informe</span>
+            </button>
+            <button class="btn" id="shareBtn" type="button" aria-label="Compartir informe" title="Compartir" hidden>
+              <svg class="ico" aria-hidden="true"><use href="#i-share"/></svg><span class="btn-label">Compartir</span>
+            </button>
+          </div>
+        </div>
+        <nav class="chips" id="chips" aria-label="Secciones del informe">
+          <a class="chip" href="#inicio" data-nav="inicio"><svg class="ico" aria-hidden="true"><use href="#i-home"/></svg>Inicio</a>
+          <a class="chip" href="#hardware" data-nav="hardware"><svg class="ico" aria-hidden="true"><use href="#i-chip"/></svg>Hardware</a>
+          <a class="chip" href="#bateria" data-nav="bateria"><svg class="ico" aria-hidden="true"><use href="#i-battery"/></svg>Batería</a>
+          <a class="chip" href="#red" data-nav="red"><svg class="ico" aria-hidden="true"><use href="#i-network"/></svg>Red</a>
+          <a class="chip" href="#almacenamiento" data-nav="almacenamiento"><svg class="ico" aria-hidden="true"><use href="#i-storage"/></svg>Almacenamiento</a>
+          <a class="chip" href="#sensores" data-nav="sensores"><svg class="ico" aria-hidden="true"><use href="#i-sensor"/></svg>Sensores</a>
+          <a class="chip" href="#navegador" data-nav="navegador"><svg class="ico" aria-hidden="true"><use href="#i-browser"/></svg>Navegador</a>
+        </nav>
+      </header>
+
+      <main id="main">
+        <!-- 01 Inicio -->
+        <section class="section" id="inicio" data-section="inicio" aria-labelledby="inicio-title">
+          <div class="hero">
+            <div class="hero-copy">
+              <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>Informe del dispositivo</p>
+              <h1 id="inicio-title"><span id="deviceName">Detectando…</span></h1>
+              <p class="hero-sub" id="deviceSub">Leyendo lo que este navegador puede contar.</p>
+              <div class="tag-row" id="heroTags"></div>
+            </div>
+            <div class="hero-mark" aria-hidden="true">
+              <svg viewBox="0 0 200 200" fill="none">
+                <circle cx="100" cy="100" r="88" stroke="currentColor" stroke-opacity=".18"/>
+                <circle cx="100" cy="100" r="64" stroke="currentColor" stroke-opacity=".1"/>
+                <path d="M26 110h30l12-38 22 74 18-52 12 30h56" stroke="#9BE8C0" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="metrics">
+            <article class="metric">
+              <div class="metric-head"><svg class="ico" aria-hidden="true"><use href="#i-ram"/></svg><span>RAM usada</span></div>
+              <p class="metric-value"><span class="num" id="m-ram">—</span><span class="unit" id="m-ram-unit"></span></p>
+              <p class="metric-sub" id="m-ram-sub">Leyendo…</p>
+            </article>
+            <article class="metric">
+              <div class="metric-head"><svg class="ico" aria-hidden="true"><use href="#i-storage"/></svg><span>Almacenamiento</span></div>
+              <p class="metric-value"><span class="num" id="m-store">—</span><span class="unit" id="m-store-unit"></span></p>
+              <p class="metric-sub" id="m-store-sub">Leyendo…</p>
+            </article>
+            <article class="metric">
+              <div class="metric-head"><svg class="ico" aria-hidden="true"><use href="#i-battery"/></svg><span>Batería</span></div>
+              <p class="metric-value"><span class="num" id="m-bat">—</span><span class="unit" id="m-bat-unit"></span></p>
+              <p class="metric-sub" id="m-bat-sub">Leyendo…</p>
+            </article>
+            <article class="metric">
+              <div class="metric-head"><svg class="ico" aria-hidden="true"><use href="#i-cpu"/></svg><span>CPU</span></div>
+              <p class="metric-value"><span class="num" id="m-cpu">—</span><span class="unit" id="m-cpu-unit"></span></p>
+              <p class="metric-sub" id="m-cpu-sub">Leyendo…</p>
+            </article>
+          </div>
+
+          <article class="card live-card">
+            <div class="card-head">
+              <h2 class="card-title">Actividad en vivo</h2>
+              <span class="live-pill" id="livePill"><span class="dot" aria-hidden="true"></span>En vivo</span>
+            </div>
+            <div class="spark-list">
+              <div class="spark-row">
+                <div class="spark-meta"><span>FPS</span><span class="mono" id="live-fps">—</span></div>
+                <canvas id="fpsCanvas" class="spark" height="56" role="img" aria-label="Gráfica en vivo de fotogramas por segundo"></canvas>
+              </div>
+              <div class="spark-row">
+                <div class="spark-meta"><span>RAM <span class="spark-sub">heap JS</span></span><span class="mono" id="live-ram">—</span></div>
+                <canvas id="ramCanvas" class="spark" height="56" role="img" aria-label="Gráfica en vivo de memoria del heap JavaScript"></canvas>
+              </div>
+              <div class="spark-row">
+                <div class="spark-meta"><span>Batería</span><span class="mono" id="live-battery">—</span></div>
+                <canvas id="batCanvas" class="spark" height="56" role="img" aria-label="Gráfica en vivo del nivel de batería"></canvas>
+              </div>
+            </div>
+            <p class="card-note">Medido localmente con <span class="mono">requestAnimationFrame</span> y muestreo cada segundo. Se pausa al ocultar la pestaña.</p>
+          </article>
+
+          <nav class="quick" aria-label="Accesos rápidos">
+            <a class="quick-link" href="#hardware"><span class="quick-ico"><svg class="ico" aria-hidden="true"><use href="#i-chip"/></svg></span><span><strong>Hardware</strong><small>CPU, GPU, pantalla</small></span><svg class="ico quick-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            <a class="quick-link" href="#bateria"><span class="quick-ico"><svg class="ico" aria-hidden="true"><use href="#i-battery"/></svg></span><span><strong>Batería</strong><small>Nivel y carga</small></span><svg class="ico quick-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            <a class="quick-link" href="#red"><span class="quick-ico"><svg class="ico" aria-hidden="true"><use href="#i-network"/></svg></span><span><strong>Red</strong><small>Calidad de conexión</small></span><svg class="ico quick-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            <a class="quick-link" href="#navegador"><span class="quick-ico"><svg class="ico" aria-hidden="true"><use href="#i-browser"/></svg></span><span><strong>Navegador</strong><small>APIs y capacidades</small></span><svg class="ico quick-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          </nav>
+        </section>
+
+        <!-- 02 Hardware -->
+        <section class="section" id="hardware" data-section="hardware" aria-labelledby="hardware-title">
+          <header class="section-head">
+            <p class="kicker">02 — Hardware</p>
+            <h2 id="hardware-title">Hardware</h2>
+            <p class="section-desc">Lo que el navegador deja leer del procesador, la GPU y la pantalla. Sin permisos y sin llamadas de red.</p>
+          </header>
+
+          <div class="grid">
+            <article class="card">
+              <div class="card-head"><h3 class="card-title"><svg class="ico" aria-hidden="true"><use href="#i-cpu"/></svg>CPU</h3></div>
+              <div class="rows">
+                <div class="row"><span class="k">Núcleos lógicos</span><span class="v mono" id="hw-cores" data-key="Núcleos lógicos">—</span></div>
+                <div class="row"><span class="k">Arquitectura</span><span class="v mono" id="hw-arch" data-key="Arquitectura">—</span></div>
+                <div class="row"><span class="k">Plataforma</span><span class="v mono" id="hw-platform" data-key="Plataforma">—</span></div>
+                <div class="row"><span class="k">Memoria del dispositivo</span><span class="v mono" id="hw-devmem" data-key="Memoria del dispositivo">—</span></div>
+                <div class="row"><span class="k">Heap JS en uso</span><span class="v mono" id="hw-heap" data-key="Heap JS en uso">—</span></div>
+              </div>
+              <p class="card-note">Los núcleos y la memoria son aproximaciones que expone el navegador, no lecturas del sistema.</p>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><h3 class="card-title"><svg class="ico" aria-hidden="true"><use href="#i-gpu"/></svg>GPU</h3></div>
+              <div class="rows">
+                <div class="row"><span class="k">Fabricante</span><span class="v mono" id="gpu-vendor" data-key="GPU fabricante">—</span></div>
+                <div class="row stack"><span class="k">Renderer</span><span class="v mono" id="gpu-renderer" data-key="GPU renderer">—</span></div>
+                <div class="row"><span class="k">API gráfica</span><span class="v mono" id="gpu-api" data-key="GPU API">—</span></div>
+                <div class="row"><span class="k">Textura máxima</span><span class="v mono" id="gpu-maxtex" data-key="GPU textura máxima">—</span></div>
+                <div class="row stack"><span class="k">WebGPU</span><span class="v mono" id="gpu-webgpu" data-key="WebGPU adaptador">—</span></div>
+                <div class="row"><span class="k">Límite de búfer</span><span class="v mono" id="gpu-buffer" data-key="WebGPU búfer máximo">—</span></div>
+              </div>
+              <p class="card-note">Renderer sin enmascarar vía <span class="mono">WEBGL_debug_renderer_info</span>; algunos navegadores lo ocultan por privacidad.</p>
+            </article>
+
+            <article class="card span-2">
+              <div class="card-head"><h3 class="card-title"><svg class="ico" aria-hidden="true"><use href="#i-display"/></svg>Pantalla</h3></div>
+              <div class="rows rows-split">
+                <div class="row"><span class="k">Resolución CSS</span><span class="v mono" id="scr-css" data-key="Pantalla resolución CSS">—</span></div>
+                <div class="row"><span class="k">Resolución física</span><span class="v mono" id="scr-phys" data-key="Pantalla resolución física">—</span></div>
+                <div class="row"><span class="k">Densidad (DPR)</span><span class="v mono" id="scr-dpr" data-key="Pantalla DPR">—</span></div>
+                <div class="row"><span class="k">Refresco estimado</span><span class="v mono" id="scr-refresh" data-key="Pantalla refresco">—</span></div>
+                <div class="row"><span class="k">Profundidad de color</span><span class="v mono" id="scr-depth" data-key="Pantalla profundidad">—</span></div>
+                <div class="row"><span class="k">Gama de color</span><span class="v mono" id="scr-gamut" data-key="Pantalla gama">—</span></div>
+                <div class="row"><span class="k">HDR</span><span class="v mono" id="scr-hdr" data-key="Pantalla HDR">—</span></div>
+                <div class="row"><span class="k">Orientación</span><span class="v mono" id="scr-orient" data-key="Pantalla orientación">—</span></div>
+                <div class="row"><span class="k">Puntos táctiles</span><span class="v mono" id="scr-touch" data-key="Pantalla puntos táctiles">—</span></div>
+              </div>
+              <p class="card-note" id="refreshNote">El refresco se estima midiendo fotogramas; puede variar con el ahorro de energía.</p>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><h3 class="card-title"><svg class="ico" aria-hidden="true"><use href="#i-ram"/></svg>Memoria</h3></div>
+              <div class="rows">
+                <div class="row"><span class="k">RAM aproximada</span><span class="v mono" id="mem-device" data-key="Memoria RAM aproximada">—</span></div>
+                <div class="row"><span class="k">Heap en uso</span><span class="v mono" id="mem-used" data-key="Memoria heap usado">—</span></div>
+                <div class="row"><span class="k">Límite del heap</span><span class="v mono" id="mem-limit" data-key="Memoria heap límite">—</span></div>
+                <div class="row"><span class="k">Heap disponible</span><span class="v mono" id="mem-free" data-key="Memoria heap disponible">—</span></div>
+              </div>
+              <div class="bar" role="img" aria-label="Uso del heap JavaScript" id="memBar"><span class="bar-fill" id="memBarFill"></span></div>
+              <p class="card-note">Solo Chromium expone <span class="mono">performance.memory</span>, y mide el heap de esta pestaña, no la RAM del sistema.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- 03 Batería -->
+        <section class="section" id="bateria" data-section="bateria" aria-labelledby="bateria-title">
+          <header class="section-head">
+            <p class="kicker">03 — Energía</p>
+            <h2 id="bateria-title">Batería</h2>
+            <p class="section-desc">Nivel y estado de carga mediante la Battery Status API. La salud, la temperatura y el voltaje no se exponen al navegador.</p>
+          </header>
+
+          <div class="grid">
+            <article class="card battery-card">
+              <div class="battery-top">
+                <div>
+                  <p class="eyebrow">Nivel actual</p>
+                  <p class="battery-big mono"><span id="bat-big">—</span><span class="battery-unit">%</span></p>
+                </div>
+                <span class="state-pill" id="bat-badge">Leyendo…</span>
+              </div>
+              <div class="bar bar-lg" role="img" aria-label="Nivel de batería" id="batBar"><span class="bar-fill" id="batBarFill"></span></div>
+              <div class="rows">
+                <div class="row"><span class="k">Estado</span><span class="v mono" id="bat-state" data-key="Batería estado">—</span></div>
+                <div class="row"><span class="k">Tiempo para cargar</span><span class="v mono" id="bat-charge-time" data-key="Batería tiempo de carga">—</span></div>
+                <div class="row"><span class="k">Tiempo restante</span><span class="v mono" id="bat-discharge-time" data-key="Batería tiempo restante">—</span></div>
+                <div class="row"><span class="k">Salud</span><span class="v mono" id="bat-health" data-key="Batería salud">—</span></div>
+                <div class="row"><span class="k">Temperatura y voltaje</span><span class="v mono" id="bat-temp" data-key="Batería temperatura y voltaje">—</span></div>
+              </div>
+              <p class="card-note">La API puede redondear el nivel (por ejemplo, 100 % → 99 %) y devolver «Infinity» mientras calcula los tiempos.</p>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><h3 class="card-title">Nivel en vivo</h3><span class="live-pill"><span class="dot" aria-hidden="true"></span>Muestreo</span></div>
+              <canvas id="batDetailCanvas" class="spark spark-tall" height="120" role="img" aria-label="Historial en vivo del nivel de batería"></canvas>
+              <div class="rows">
+                <div class="row"><span class="k">Origen del dato</span><span class="v mono">Battery Status API</span></div>
+                <div class="row"><span class="k">Precisión</span><span class="v mono">1 %</span></div>
+              </div>
+              <p class="card-note">Los fabricantes agrupan los cambios de nivel; una línea plana no significa que la lectura esté rota.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- 04 Red -->
+        <section class="section" id="red" data-section="red" aria-labelledby="red-title">
+          <header class="section-head">
+            <p class="kicker">04 — Conectividad</p>
+            <h2 id="red-title">Red</h2>
+            <p class="section-desc">Tipo de conexión y calidad estimada según la Network Information API del navegador.</p>
+          </header>
+
+          <div class="grid">
+            <article class="card">
+              <div class="card-head"><h3 class="card-title"><svg class="ico" aria-hidden="true"><use href="#i-network"/></svg>Conexión</h3><span class="state-pill" id="net-pill">—</span></div>
+              <div class="rows">
+                <div class="row"><span class="k">Estado</span><span class="v mono" id="net-status" data-key="Red estado">—</span></div>
+                <div class="row"><span class="k">Tipo</span><span class="v mono" id="net-type" data-key="Red tipo">—</span></div>
+                <div class="row"><span class="k">Tipo efectivo</span><span class="v mono" id="net-effective" data-key="Red tipo efectivo">—</span></div>
+                <div class="row"><span class="k">Ancho de banda</span><span class="v mono" id="net-downlink" data-key="Red ancho de banda">—</span></div>
+                <div class="row"><span class="k">Latencia</span><span class="v mono" id="net-rtt" data-key="Red latencia">—</span></div>
+                <div class="row"><span class="k">Ahorro de datos</span><span class="v mono" id="net-savedata" data-key="Red ahorro de datos">—</span></div>
+              </div>
+              <p class="card-note">Son estimaciones del navegador, no una prueba de velocidad: cambian con la red y el ahorro de energía.</p>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><h3 class="card-title"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg>Calidad</h3></div>
+              <div class="quality" id="qualityBox">
+                <p class="quality-big mono" id="qualityValue">—</p>
+                <p class="quality-label" id="qualityLabel">Sin datos de conexión</p>
+              </div>
+              <div class="bar" role="img" aria-label="Calidad de conexión estimada" id="netBar"><span class="bar-fill" id="netBarFill"></span></div>
+              <div class="rows">
+                <div class="row"><span class="k">Cambio de red</span><span class="v mono" id="net-live">—</span></div>
+                <div class="row"><span class="k">Origen</span><span class="v mono" id="net-origin">—</span></div>
+              </div>
+              <p class="card-note">La Network Information API solo está disponible en navegadores Chromium; en Safari y Firefox verás «No disponible».</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- 05 Almacenamiento -->
+        <section class="section" id="almacenamiento" data-section="almacenamiento" aria-labelledby="almacenamiento-title">
+          <header class="section-head">
+            <p class="kicker">05 — Datos</p>
+            <h2 id="almacenamiento-title">Almacenamiento</h2>
+            <p class="section-desc">Cuota y uso del almacenamiento de este origen web, no del disco completo del dispositivo.</p>
+          </header>
+
+          <div class="grid">
+            <article class="card">
+              <div class="card-head"><h3 class="card-title"><svg class="ico" aria-hidden="true"><use href="#i-storage"/></svg>Cuota del origen</h3></div>
+              <div class="storage-top">
+                <p class="battery-big mono"><span id="st-pct">—</span><span class="battery-unit">%</span></p>
+                <p class="storage-caption" id="st-caption">Calculando…</p>
+              </div>
+              <div class="bar bar-lg" role="img" aria-label="Uso del almacenamiento del origen" id="stBar"><span class="bar-fill" id="stBarFill"></span></div>
+              <div class="rows">
+                <div class="row"><span class="k">Usado</span><span class="v mono" id="st-used" data-key="Almacenamiento usado">—</span></div>
+                <div class="row"><span class="k">Cuota</span><span class="v mono" id="st-quota" data-key="Almacenamiento cuota">—</span></div>
+                <div class="row"><span class="k">Disponible</span><span class="v mono" id="st-free" data-key="Almacenamiento disponible">—</span></div>
+                <div class="row"><span class="k">Persistente</span><span class="v mono" id="st-persist" data-key="Almacenamiento persistente">—</span></div>
+                <div class="row stack"><span class="k">Desglose</span><span class="v mono" id="st-details" data-key="Almacenamiento desglose">—</span></div>
+              </div>
+              <p class="card-note">La cuota es una fracción del disco que el navegador concede a este sitio; puede compartirse entre pestañas.</p>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><h3 class="card-title">Qué se guarda aquí</h3></div>
+              <p class="body-text">Lumen no escribe datos de medición. Solo persiste tu preferencia de tema y la caché del service worker para funcionar sin conexión.</p>
+              <div class="rows">
+                <div class="row"><span class="k">Preferencia de tema</span><span class="v mono">localStorage</span></div>
+                <div class="row"><span class="k">Caché de la app</span><span class="v mono">Cache Storage</span></div>
+                <div class="row"><span class="k">Cookies</span><span class="v mono">Ninguna</span></div>
+                <div class="row"><span class="k">Analítica</span><span class="v mono">Ninguna</span></div>
+                <div class="row"><span class="k">Llamadas de red</span><span class="v mono">Solo el propio sitio</span></div>
+              </div>
+              <p class="card-note">Puedes borrar la caché desde los ajustes del navegador sin afectar al resto de sitios.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- 06 Sensores -->
+        <section class="section" id="sensores" data-section="sensores" aria-labelledby="sensores-title">
+          <header class="section-head">
+            <p class="kicker">06 — Movimiento</p>
+            <h2 id="sensores-title">Sensores</h2>
+            <p class="section-desc">Acelerómetro, giroscopio y orientación. En iOS y iPadOS requieren un gesto explícito y una conexión segura.</p>
+          </header>
+
+          <article class="card sensors-control">
+            <div class="sensors-control-copy">
+              <div class="card-head"><h3 class="card-title"><svg class="ico" aria-hidden="true"><use href="#i-sensor"/></svg>Sensores de movimiento</h3></div>
+              <p class="body-text" id="sensorNote">Activa los sensores para ver los valores en vivo. No se envía nada fuera del dispositivo.</p>
+              <p class="sensor-status" id="sensorStatus" role="status" aria-live="polite">Inactivos.</p>
+            </div>
+            <button class="btn primary" id="sensorBtn" type="button">Activar sensores</button>
+          </article>
+
+          <div class="grid">
+            <article class="card">
+              <div class="card-head"><h3 class="card-title">Acelerómetro</h3><span class="unit-pill">m/s²</span></div>
+              <div class="axes">
+                <div class="axis"><span class="axis-label">X</span><div class="meter"><span class="meter-fill" id="accxBar"></span></div><span class="axis-val mono" id="acc-x">—</span></div>
+                <div class="axis"><span class="axis-label">Y</span><div class="meter"><span class="meter-fill" id="accyBar"></span></div><span class="axis-val mono" id="acc-y">—</span></div>
+                <div class="axis"><span class="axis-label">Z</span><div class="meter"><span class="meter-fill" id="acczBar"></span></div><span class="axis-val mono" id="acc-z">—</span></div>
+              </div>
+              <p class="card-note">Escala ±20 m/s². Incluye la gravedad cuando el navegador la reporta.</p>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><h3 class="card-title">Giroscopio</h3><span class="unit-pill">°/s</span></div>
+              <div class="axes">
+                <div class="axis"><span class="axis-label">α</span><div class="meter"><span class="meter-fill" id="gyroaBar"></span></div><span class="axis-val mono" id="gyro-a">—</span></div>
+                <div class="axis"><span class="axis-label">β</span><div class="meter"><span class="meter-fill" id="gyrobBar"></span></div><span class="axis-val mono" id="gyro-b">—</span></div>
+                <div class="axis"><span class="axis-label">γ</span><div class="meter"><span class="meter-fill" id="gyrocBar"></span></div><span class="axis-val mono" id="gyro-c">—</span></div>
+              </div>
+              <p class="card-note">Velocidad angular. Muchos portátiles no tienen giroscopio y devuelven valores nulos.</p>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><h3 class="card-title">Orientación</h3><span class="unit-pill">grados</span></div>
+              <div class="axes">
+                <div class="axis"><span class="axis-label">α</span><div class="meter"><span class="meter-fill" id="oriaBar"></span></div><span class="axis-val mono" id="ori-a">—</span></div>
+                <div class="axis"><span class="axis-label">β</span><div class="meter"><span class="meter-fill" id="oribBar"></span></div><span class="axis-val mono" id="ori-b">—</span></div>
+                <div class="axis"><span class="axis-label">γ</span><div class="meter"><span class="meter-fill" id="oricBar"></span></div><span class="axis-val mono" id="ori-c">—</span></div>
+              </div>
+              <p class="card-note">α es la brújula (0–360°), β la inclinación frontal y γ la lateral.</p>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><h3 class="card-title">Brújula</h3></div>
+              <div class="compass-wrap">
+                <div class="compass" id="compass" aria-hidden="true">
+                  <span class="compass-needle" id="compassNeedle"></span>
+                  <span class="compass-n">N</span>
+                  <span class="compass-e">E</span>
+                  <span class="compass-s">S</span>
+                  <span class="compass-w">W</span>
+                </div>
+                <p class="compass-value mono" id="compassValue">—</p>
+                <p class="compass-label" id="compassLabel">Sin rumbo</p>
+              </div>
+              <p class="card-note">Solo disponible si el dispositivo tiene magnetómetro y el navegador lo expone.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- 07 Navegador -->
+        <section class="section" id="navegador" data-section="navegador" aria-labelledby="navegador-title">
+          <header class="section-head">
+            <p class="kicker">07 — Capacidades</p>
+            <h2 id="navegador-title">Navegador</h2>
+            <p class="section-desc">Identidad del agente de usuario, datos de alta entropía, permisos y APIs disponibles.</p>
+          </header>
+
+          <div class="grid">
+            <article class="card span-2">
+              <div class="card-head"><h3 class="card-title"><svg class="ico" aria-hidden="true"><use href="#i-browser"/></svg>User agent</h3></div>
+              <div class="rows">
+                <div class="row stack"><span class="k">UA completo</span><span class="v mono" id="br-ua" data-key="Navegador user agent">—</span></div>
+                <div class="row stack"><span class="k">Marcas (UA-CH)</span><span class="v mono" id="br-brands" data-key="Navegador marcas UA-CH">—</span></div>
+                <div class="row stack"><span class="k">Versión completa</span><span class="v mono" id="br-fullver" data-key="Navegador versión completa">—</span></div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><h3 class="card-title">Plataforma</h3></div>
+              <div class="rows">
+                <div class="row"><span class="k">Plataforma UA-CH</span><span class="v mono" id="br-platform" data-key="Navegador plataforma">—</span></div>
+                <div class="row"><span class="k">Versión de SO</span><span class="v mono" id="br-platver" data-key="Navegador versión de SO">—</span></div>
+                <div class="row"><span class="k">Modelo</span><span class="v mono" id="br-model" data-key="Navegador modelo">—</span></div>
+                <div class="row"><span class="k">Arquitectura</span><span class="v mono" id="br-arch" data-key="Navegador arquitectura">—</span></div>
+                <div class="row"><span class="k">Bits</span><span class="v mono" id="br-bits" data-key="Navegador bits">—</span></div>
+                <div class="row"><span class="k">Plataforma clásica</span><span class="v mono" id="br-legacy" data-key="Navegador plataforma clásica">—</span></div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><h3 class="card-title">Entorno</h3></div>
+              <div class="rows">
+                <div class="row"><span class="k">Idiomas</span><span class="v mono" id="br-lang" data-key="Navegador idiomas">—</span></div>
+                <div class="row"><span class="k">Zona horaria</span><span class="v mono" id="br-tz" data-key="Navegador zona horaria">—</span></div>
+                <div class="row"><span class="k">Cookies</span><span class="v mono" id="br-cookies" data-key="Navegador cookies">—</span></div>
+                <div class="row"><span class="k">Do Not Track</span><span class="v mono" id="br-dnt" data-key="Navegador do not track">—</span></div>
+                <div class="row"><span class="k">Dispositivos de media</span><span class="v mono" id="br-media" data-key="Navegador dispositivos de media">—</span></div>
+                <div class="row"><span class="k">Contexto seguro</span><span class="v mono" id="br-secure" data-key="Navegador contexto seguro">—</span></div>
+              </div>
+              <p class="card-note">El conteo de dispositivos de media no solicita permiso y puede ocultar etiquetas y dispositivos.</p>
+            </article>
+
+            <article class="card span-2">
+              <div class="card-head"><h3 class="card-title">Permisos</h3><span class="unit-pill" id="permCount">—</span></div>
+              <p class="body-text">Estado consultado sin mostrar avisos. Un permiso «Preguntar» solo se activa cuando lo pides explícitamente.</p>
+              <div class="perm-grid" id="permGrid"></div>
+            </article>
+
+            <article class="card span-2">
+              <div class="card-head"><h3 class="card-title">Web APIs</h3><span class="unit-pill" id="apiCount">—</span></div>
+              <div class="api-grid" id="apiGrid"></div>
+              <p class="card-note">Presencia del objeto en este navegador; no implica que el hardware subyacente exista.</p>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-foot">
+        <div class="foot-line">
+          <span class="local-pill"><span class="dot"></span>100% local</span>
+          <span>Lumen Web · <span class="mono">1.0.0</span></span>
+        </div>
+        <p>Inspirado en la información de DevCheck, con interfaz propia. Sin publicidad, sin cuentas, sin telemetría.</p>
+        <p class="foot-meta"><span id="footStamp">—</span> · <span class="mono" id="footOrigin">—</span></p>
+      </footer>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog class="dialog" id="reportDialog" aria-labelledby="reportDialogTitle">
+    <div class="dialog-head">
+      <h2 id="reportDialogTitle">Informe JSON</h2>
+      <button class="btn icon-btn" id="closeDialog" type="button" aria-label="Cerrar">
+        <svg class="ico" aria-hidden="true"><use href="#i-x"/></svg>
+      </button>
+    </div>
+    <p class="card-note">No se pudo escribir en el portapapeles. Selecciona el texto y cópialo manualmente.</p>
+    <textarea id="reportText" readonly rows="12" spellcheck="false" aria-label="Informe JSON"></textarea>
+    <div class="dialog-actions">
+      <button class="btn" id="selectReport" type="button">Seleccionar todo</button>
+    </div>
+  </dialog>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

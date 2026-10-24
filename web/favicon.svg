@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Lumen">
+  <rect width="32" height="32" rx="7" fill="#0A0B0D"/>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" fill="none" stroke="#24282F"/>
+  <path d="M4 17.5h4.2l2.3-6.6 4 12.2 2.6-7.6 1.7 2H28"
+        fill="none" stroke="#9BE8C0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

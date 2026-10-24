@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Lumen">
+  <rect width="512" height="512" fill="#0A0B0D"/>
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#9BE8C0" stroke-opacity="0.10" stroke-width="2"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#9BE8C0" stroke-opacity="0.16" stroke-width="2"/>
+  <path d="M92 288h60l30-92 56 168 40-112 28 36h114"
+        fill="none" stroke="#9BE8C0" stroke-width="26"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
