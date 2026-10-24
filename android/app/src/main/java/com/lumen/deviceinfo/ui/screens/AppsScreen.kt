@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -35,10 +36,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lumen.deviceinfo.LumenViewModel
 import com.lumen.deviceinfo.data.AppInfo
 import com.lumen.deviceinfo.data.formatBytes
+import com.lumen.deviceinfo.ui.components.GlassCard
+import com.lumen.deviceinfo.ui.theme.LocalLumenColors
 
 @Composable
 fun AppsScreen(vm: LumenViewModel) {
     val state by vm.uiState.collectAsStateWithLifecycle()
+    val lumen = LocalLumenColors.current
     var query by remember { mutableStateOf("") }
     var showSystem by remember { mutableStateOf(false) }
 
@@ -51,19 +55,27 @@ fun AppsScreen(vm: LumenViewModel) {
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Buscar app o paquete") },
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(22.dp)
             )
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = showSystem,
                     onClick = { showSystem = !showSystem },
-                    label = { Text("Sistema") }
+                    label = { Text("Sistema") },
+                    shape = RoundedCornerShape(999.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                        selectedLabelColor = MaterialTheme.colorScheme.primary
+                    )
                 )
                 FilterChip(
                     selected = false,
                     onClick = { },
-                    label = { Text("${state.apps.size} apps") }
+                    label = { Text("${state.apps.size} apps") },
+                    shape = RoundedCornerShape(999.dp),
+                    enabled = false
                 )
             }
             Spacer(Modifier.height(8.dp))
@@ -79,7 +91,7 @@ fun AppsScreen(vm: LumenViewModel) {
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 20.dp),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(filtered, key = { it.packageName }) { app ->
@@ -95,42 +107,43 @@ private fun AppRow(app: AppInfo, vm: LumenViewModel) {
     LaunchedEffect(app.packageName) {
         icon = vm.loadAppIconSuspend(app.packageName)
     }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .padding(4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (icon != null) {
-            Image(
-                bitmap = icon!!.asImageBitmap(),
-                contentDescription = null,
-                modifier = Modifier.size(40.dp)
-            )
-        } else {
-            Spacer(Modifier.size(40.dp))
-        }
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(app.name, style = MaterialTheme.typography.titleSmall)
-            Text(
-                app.packageName,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                "v${app.versionName} · targetSdk ${app.targetSdk} · ${formatBytes(app.sizeBytes)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        if (app.isSystem) {
-            Text(
-                "SYS",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary
-            )
+    GlassCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (icon != null) {
+                Image(
+                    bitmap = icon!!.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                )
+            } else {
+                Spacer(Modifier.size(40.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(app.name, style = MaterialTheme.typography.titleSmall)
+                Text(
+                    app.packageName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "v${app.versionName} · targetSdk ${app.targetSdk} · ${formatBytes(app.sizeBytes)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (app.isSystem) {
+                Text(
+                    "SYS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }

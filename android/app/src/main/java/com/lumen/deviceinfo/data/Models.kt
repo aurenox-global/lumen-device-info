@@ -157,12 +157,20 @@ data class SystemInfoModel(
     val brand: String = NA,
     val model: String = NA,
     val device: String = NA,
+    val deviceName: String = NA,
     val soc: String = NA,
     val oem: String = NA
 )
 
 data class DeviceSummary(
-    val model: String = NA,
+    /** Nombre real del dispositivo (resolvedor: device_name → marketname → manufacturer+model). */
+    val name: String = NA,
+    /** Código de modelo real (Build.MODEL). */
+    val modelCode: String = NA,
+    /** Marca/fabricante limpio. */
+    val manufacturer: String = NA,
+    /** Fuente de donde se leyó el nombre (para depuración). */
+    val nameSource: String = NA,
     val soc: String = NA,
     val os: String = NA
 )

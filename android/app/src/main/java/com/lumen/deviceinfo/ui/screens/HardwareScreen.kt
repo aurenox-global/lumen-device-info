@@ -2,8 +2,8 @@ package com.lumen.deviceinfo.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -17,9 +17,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lumen.deviceinfo.LumenViewModel
 import com.lumen.deviceinfo.ui.components.DividerLine
+import com.lumen.deviceinfo.ui.components.GlassCard
 import com.lumen.deviceinfo.ui.components.InfoRow
 import com.lumen.deviceinfo.ui.components.InfoRowSub
-import com.lumen.deviceinfo.ui.components.LumenCard
 import com.lumen.deviceinfo.ui.components.SectionHeader
 
 @Composable
@@ -29,11 +29,12 @@ fun HardwareScreen(vm: LumenViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
+            .padding(horizontal = 20.dp)
+            .padding(top = 12.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         SectionHeader("CPU")
-        LumenCard {
+        GlassCard {
             InfoRow("Núcleos", state.cpu.cores.toString())
             InfoRow("ABI", state.cpu.abi)
             InfoRow("Gobernador", state.cpu.governor)
@@ -51,14 +52,14 @@ fun HardwareScreen(vm: LumenViewModel) {
         }
 
         SectionHeader("GPU")
-        LumenCard {
+        GlassCard {
             InfoRow("Vendor", state.gpu.vendor)
             InfoRow("Renderer", state.gpu.renderer)
             InfoRow("Versión GLES", state.gpu.version)
         }
 
         SectionHeader("Pantalla")
-        LumenCard {
+        GlassCard {
             InfoRow("Resolución", state.display.resolution)
             InfoRow("Densidad", state.display.density)
             InfoRow("Refresco", state.display.refreshRate)
@@ -67,7 +68,7 @@ fun HardwareScreen(vm: LumenViewModel) {
         }
 
         SectionHeader("Memoria")
-        LumenCard {
+        GlassCard {
             InfoRow("Total", state.memory.total)
             InfoRow("Disponible", state.memory.available)
             InfoRow("Usada", state.memory.used)
@@ -75,7 +76,7 @@ fun HardwareScreen(vm: LumenViewModel) {
         }
 
         SectionHeader("Almacenamiento")
-        LumenCard {
+        GlassCard {
             InfoRow("Total", state.storage.total)
             InfoRow("Libre", state.storage.free)
             state.storage.volumes.forEach { v ->
@@ -85,8 +86,8 @@ fun HardwareScreen(vm: LumenViewModel) {
         }
 
         SectionHeader("Cámaras")
-        LumenCard {
-            InfoRow("Número", state.cameras.count.toString(), mono = false)
+        GlassCard {
+            InfoRow("Número", state.cameras.count.toString())
             if (state.cameras.details.isEmpty()) {
                 InfoRow("Detalles", "No disponible")
             } else {
@@ -102,13 +103,13 @@ fun HardwareScreen(vm: LumenViewModel) {
         }
 
         SectionHeader("Bluetooth")
-        LumenCard {
+        GlassCard {
             InfoRow("Soportado", if (state.bluetooth.supported) "Sí" else "No")
             InfoRow("Nombre", state.bluetooth.name)
             InfoRow("Dirección", state.bluetooth.address)
             InfoRow("Estado", state.bluetooth.state)
         }
 
-        androidx.compose.foundation.layout.Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(4.dp))
     }
 }

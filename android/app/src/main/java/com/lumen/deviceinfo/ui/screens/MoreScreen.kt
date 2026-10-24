@@ -10,36 +10,38 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.lumen.deviceinfo.ui.components.LumenCard
+import com.lumen.deviceinfo.ui.components.GlassCard
+import com.lumen.deviceinfo.ui.components.IconBadge
 import com.lumen.deviceinfo.ui.navigation.MoreItem
 import com.lumen.deviceinfo.ui.navigation.moreItems
-import com.lumen.deviceinfo.ui.theme.Mint
+import com.lumen.deviceinfo.ui.theme.LocalLumenColors
 
 @Composable
 fun MoreScreen(onOpen: (String) -> Unit) {
+    val lumen = LocalLumenColors.current
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
+            .padding(horizontal = 20.dp)
+            .padding(top = 12.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
             text = "MÁS",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = lumen.textTertiary
         )
         moreItems.forEach { item ->
             MoreRow(item, onOpen)
@@ -50,26 +52,20 @@ fun MoreScreen(onOpen: (String) -> Unit) {
 
 @Composable
 private fun MoreRow(item: MoreItem, onOpen: (String) -> Unit) {
-    LumenCard {
+    GlassCard(modifier = Modifier.clickable { onOpen(item.screen.route) }) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .clickable { onOpen(item.screen.route) }
-                .padding(4.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                item.icon,
-                contentDescription = item.screen.label,
-                tint = Mint,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
+            IconBadge(icon = item.icon, tint = MaterialTheme.colorScheme.primary)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 14.dp)
+            ) {
                 Text(
                     item.screen.label,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
@@ -78,7 +74,12 @@ private fun MoreRow(item: MoreItem, onOpen: (String) -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Text("→", color = Mint, style = MaterialTheme.typography.titleMedium)
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp)
+            )
         }
     }
 }

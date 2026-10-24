@@ -15,8 +15,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lumen.deviceinfo.LumenViewModel
 import com.lumen.deviceinfo.ui.components.DividerLine
+import com.lumen.deviceinfo.ui.components.GlassCard
 import com.lumen.deviceinfo.ui.components.InfoRow
-import com.lumen.deviceinfo.ui.components.LumenCard
 import com.lumen.deviceinfo.ui.components.SectionHeader
 
 @Composable
@@ -26,11 +26,12 @@ fun SystemScreen(vm: LumenViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
+            .padding(horizontal = 20.dp)
+            .padding(top = 12.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         SectionHeader("Android")
-        LumenCard {
+        GlassCard {
             InfoRow("Versión", state.system.androidVersion)
             InfoRow("SDK", state.system.sdk)
             InfoRow("Parche de seguridad", state.system.securityPatch)
@@ -40,7 +41,7 @@ fun SystemScreen(vm: LumenViewModel) {
         }
 
         SectionHeader("Kernel y hardware")
-        LumenCard {
+        GlassCard {
             InfoRow("Kernel", state.system.kernel)
             InfoRow("Bootloader", state.system.bootloader)
             InfoRow("Board", state.system.board)
@@ -49,7 +50,9 @@ fun SystemScreen(vm: LumenViewModel) {
         }
 
         SectionHeader("Dispositivo")
-        LumenCard {
+        GlassCard {
+            InfoRow("Nombre del dispositivo", state.system.deviceName)
+            DividerLine()
             InfoRow("Fabricante", state.system.manufacturer)
             InfoRow("Marca", state.system.brand)
             InfoRow("Modelo", state.system.model)
@@ -58,7 +61,7 @@ fun SystemScreen(vm: LumenViewModel) {
         }
 
         SectionHeader("Regional")
-        LumenCard {
+        GlassCard {
             InfoRow("ABIs", state.system.abis)
             InfoRow("Locale", state.system.locale)
             InfoRow("Zona horaria", state.system.timezone)

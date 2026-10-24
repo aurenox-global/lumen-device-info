@@ -1,19 +1,36 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lumen — Conoce tu Android de verdad</title>
 <meta name="description" content="Lumen es una app Android sin anuncios para ver hardware, batería, eSIM, red, sensores y benchmarks. Todo se lee en tu móvil; nada sale de él.">
-<meta name="theme-color" content="#0A0B0D">
+<meta name="theme-color" content="#F4F8FA">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <meta property="og:title" content="Lumen — Conoce tu Android de verdad">
 <meta property="og:description" content="Hardware, batería, eSIM, red, sensores y benchmarks. Sin anuncios, sin cuentas y sin telemetría.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="img/inicio.png">
+<script>
+  try {
+    if (localStorage.getItem("lumen-theme") === "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+      var themeMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeMeta) themeMeta.setAttribute("content", "#070C10");
+    }
+  } catch (e) {}
+</script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+<a class="skip-link" href="#top">Saltar al contenido</a>
+
+<div class="ambient" aria-hidden="true">
+  <span class="blob blob-a"></span>
+  <span class="blob blob-b"></span>
+  <span class="blob blob-c"></span>
+</div>
 
 <header class="site-header">
   <div class="container header-inner">
@@ -32,11 +49,14 @@
     </nav>
 
     <div class="header-actions">
-      <button class="icon-btn" id="theme-btn" type="button" aria-label="Cambiar tema">
+      <button class="icon-btn" id="theme-btn" type="button" aria-label="Activar tema oscuro" aria-pressed="false">
         <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
         <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
       </button>
-      <a class="btn btn-primary btn-small" href="https://github.com/aurenox-global/lumen-device-info/releases/download/v1.1.0/lumen-debug.apk">Descargar</a>
+      <a class="btn btn-primary btn-small" href="https://github.com/aurenox-global/lumen-device-info/releases/download/v1.2.0/lumen-debug.apk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11M7.5 9.5 12 14l4.5-4.5M5 20h14"/></svg>
+        Descargar
+      </a>
     </div>
   </div>
 </header>
@@ -46,12 +66,12 @@
   <!-- HERO -->
   <section class="hero container">
     <div class="hero-copy">
-      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> App Android · v1.1.0</p>
-      <h1>Conoce tu Android<br><span class="dim">de verdad.</span></h1>
+      <p class="kicker"><span class="pulse-dot" aria-hidden="true"></span> App Android · v1.2.0</p>
+      <h1>Conoce tu Android<br><span class="accent">de verdad.</span></h1>
       <p class="lead">Hardware, batería, eSIM, red, sensores y benchmarks en una sola app. Sin anuncios, sin cuentas y sin enviar nada a ningún servidor.</p>
 
       <div class="cta-row">
-        <a class="btn btn-primary" href="https://github.com/aurenox-global/lumen-device-info/releases/download/v1.1.0/lumen-debug.apk">
+        <a class="btn btn-primary" href="https://github.com/aurenox-global/lumen-device-info/releases/download/v1.2.0/lumen-debug.apk">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>
           Descargar APK
         </a>
@@ -163,8 +183,8 @@
         <figcaption><strong>Batería</strong><span>Salud, capacidad, ciclos e historial real.</span></figcaption>
       </figure>
       <figure class="screen">
-        <div class="phone phone-small"><img src="img/red.png" alt="Pantalla de red con la sección SIM y eSIM" width="1080" height="2340"></div>
-        <figcaption><strong>Red y eSIM</strong><span>Operador, señal y compatibilidad eUICC.</span></figcaption>
+        <div class="phone phone-small"><img src="img/mas.png" alt="Pantalla Más con accesos a red, sensores, apps y tests" width="1080" height="2340"></div>
+        <figcaption><strong>Más</strong><span>Red, sensores, apps y tests, sin perderte.</span></figcaption>
       </figure>
     </div>
   </section>
@@ -176,7 +196,7 @@
         <p class="eyebrow"><span class="num">03</span> Instalar</p>
         <h2>Tres pasos.<br>Sin cuenta.</h2>
         <p class="section-sub">El APK está firmado en modo depuración. Es normal que Android pida permiso para instalar apps de fuera de la tienda.</p>
-        <a class="btn btn-primary" href="https://github.com/aurenox-global/lumen-device-info/releases/download/v1.1.0/lumen-debug.apk">Descargar APK · v1.1.0</a>
+        <a class="btn btn-primary" href="https://github.com/aurenox-global/lumen-device-info/releases/download/v1.2.0/lumen-debug.apk">Descargar APK · v1.2.0</a>
       </div>
 
       <ol class="steps">
@@ -200,6 +220,9 @@
   <section class="section container">
     <div class="card honesty">
       <div class="honesty-head">
+        <span class="honesty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5.5c0 4.3-2.9 7.7-7 9.5-4.1-1.8-7-5.2-7-9.5V6z"/><path d="M12 8v4.5"/><circle cx="12" cy="16" r=".9" fill="currentColor" stroke="none"/></svg>
+        </span>
         <p class="eyebrow"><span class="num">04</span> Sin humo</p>
         <h2>Lo que Android no deja leer.</h2>
       </div>
@@ -221,27 +244,45 @@
 
     <div class="faq">
       <details>
-        <summary>¿Necesita root?</summary>
+        <summary>
+          <span>¿Necesita root?</span>
+          <span class="faq-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+        </summary>
         <p>No. Toda la información básica se lee con las APIs públicas de Android. Root o Shizuku solo amplían datos que el fabricante bloquea, como la salud real de la batería.</p>
       </details>
       <details>
-        <summary>¿Envía datos a algún sitio?</summary>
+        <summary>
+          <span>¿Envía datos a algún sitio?</span>
+          <span class="faq-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+        </summary>
         <p>No. No hay analítica, ni cuentas, ni publicidad, ni peticiones de red. Todo se queda en el teléfono.</p>
       </details>
       <details>
-        <summary>¿Por qué el APK es «debug»?</summary>
+        <summary>
+          <span>¿Por qué el APK es «debug»?</span>
+          <span class="faq-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+        </summary>
         <p>Está firmado con la clave de desarrollo para poder instalarlo sin publicarlo en Google Play. Para la tienda haría falta una firma de release y justificar el permiso de lista de apps.</p>
       </details>
       <details>
-        <summary>¿Funciona en mi móvil?</summary>
+        <summary>
+          <span>¿Funciona en mi móvil?</span>
+          <span class="faq-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+        </summary>
         <p>Requiere Android 8.0 o superior. Cuanto más reciente sea el sistema, más datos expone; en equipos antiguos algunas tarjetas dirán «No disponible».</p>
       </details>
       <details>
-        <summary>¿La web también lee mi dispositivo?</summary>
+        <summary>
+          <span>¿La web también lee mi dispositivo?</span>
+          <span class="faq-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+        </summary>
         <p>No. Esta web es la página de presentación. Un navegador no puede acceder al hardware como una app nativa, así que aquí no simulamos datos: solo contamos qué hace Lumen.</p>
       </details>
       <details>
-        <summary>¿Puedo usarla sin conexión?</summary>
+        <summary>
+          <span>¿Puedo usarla sin conexión?</span>
+          <span class="faq-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+        </summary>
         <p>Sí. La app no necesita internet para nada.</p>
       </details>
     </div>
@@ -253,7 +294,7 @@
       <p class="eyebrow">Listo para mirar dentro</p>
       <h2>Tu móvil sabe más<br>de lo que enseña.</h2>
       <div class="cta-row center">
-        <a class="btn btn-primary" href="https://github.com/aurenox-global/lumen-device-info/releases/download/v1.1.0/lumen-debug.apk">Descargar Lumen 1.1.0</a>
+        <a class="btn btn-primary" href="https://github.com/aurenox-global/lumen-device-info/releases/download/v1.2.0/lumen-debug.apk">Descargar Lumen 1.2.0</a>
         <a class="btn btn-ghost" href="https://github.com/aurenox-global/lumen-device-info">Código en GitHub</a>
       </div>
       <p class="micro">Android 8.0+ · 16 MB · Sin anuncios · MIT</p>
@@ -265,7 +306,7 @@
   <div class="container footer-inner">
     <div class="footer-brand">
       <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2.5-7 4 14 3-9 2 2h4.5"/></svg></span>
-      <div><strong>Lumen</strong><span>v1.1.0 · Información del dispositivo</span></div>
+      <div><strong>Lumen</strong><span>v1.2.0 · Información del dispositivo</span></div>
     </div>
     <nav aria-label="Enlaces">
       <a href="https://github.com/aurenox-global/lumen-device-info">GitHub</a>

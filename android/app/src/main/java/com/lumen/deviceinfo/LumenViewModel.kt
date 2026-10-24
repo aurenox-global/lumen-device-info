@@ -50,7 +50,7 @@ data class UiState(
     val bluetooth: BluetoothInfo = BluetoothInfo(),
     val apps: List<AppInfo> = emptyList(),
     val appsLoaded: Boolean = false,
-    val themeMode: ThemeMode = ThemeMode.DARK,
+    val themeMode: ThemeMode = ThemeMode.LIGHT,
     val cpuHistory: List<Float> = emptyList(),
     val ramHistory: List<Float> = emptyList(),
     val batteryHistory: List<BatterySample> = emptyList(),
@@ -82,12 +82,12 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun loadThemeMode(): ThemeMode {
         return try {
-            when (prefs.getString("theme", "dark")) {
-                "light" -> ThemeMode.LIGHT
+            when (prefs.getString("theme", "light")) {
+                "dark" -> ThemeMode.DARK
                 "system" -> ThemeMode.SYSTEM
-                else -> ThemeMode.DARK
+                else -> ThemeMode.LIGHT
             }
-        } catch (e: Exception) { ThemeMode.DARK }
+        } catch (e: Exception) { ThemeMode.LIGHT }
     }
 
     fun setThemeMode(mode: ThemeMode) {
@@ -233,7 +233,9 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         b.appendLine("LUMEN — Informe del dispositivo")
         b.appendLine("==============================")
         b.appendLine()
-        b.appendLine("Dispositivo: ${st.summary.model}")
+        b.appendLine("Dispositivo: ${st.summary.name}")
+        b.appendLine("Modelo: ${st.summary.modelCode}")
+        b.appendLine("Fabricante: ${st.summary.manufacturer}")
         b.appendLine("SoC: ${st.summary.soc}")
         b.appendLine("Sistema: ${st.summary.os}")
         b.appendLine()
@@ -268,6 +270,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         }
         b.appendLine()
         b.appendLine("[Sistema]")
+        b.appendLine("Nombre del dispositivo: ${st.system.deviceName}")
         b.appendLine("Android: ${st.system.androidVersion}")
         b.appendLine("SDK: ${st.system.sdk}")
         b.appendLine("Parche: ${st.system.securityPatch}")

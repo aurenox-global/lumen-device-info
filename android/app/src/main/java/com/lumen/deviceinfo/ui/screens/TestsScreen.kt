@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -24,13 +25,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.lumen.deviceinfo.LumenViewModel
 import com.lumen.deviceinfo.data.Benchmark
+import com.lumen.deviceinfo.ui.components.GlassCard
 import com.lumen.deviceinfo.ui.components.InfoRow
-import com.lumen.deviceinfo.ui.components.LumenCard
 import com.lumen.deviceinfo.ui.components.SectionHeader
-import com.lumen.deviceinfo.ui.theme.MonoFamily
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -45,11 +46,12 @@ fun TestsScreen(vm: LumenViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
+            .padding(horizontal = 20.dp)
+            .padding(top = 12.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         SectionHeader("Benchmarks")
-        LumenCard {
+        GlassCard {
             Text(
                 text = "Los benchmarks ejecutan cálculos locales y miden el rendimiento del dispositivo. No se envían datos.",
                 style = MaterialTheme.typography.bodySmall,
@@ -108,7 +110,7 @@ fun TestsScreen(vm: LumenViewModel) {
                 else -> "Almacenamiento"
             }
             SectionHeader(label)
-            LumenCard {
+            GlassCard {
                 if (running == id) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         CircularProgressIndicator(modifier = Modifier.height(16.dp).width(16.dp))
@@ -131,14 +133,15 @@ fun TestsScreen(vm: LumenViewModel) {
                     Spacer(Modifier.height(6.dp))
                     Text(
                         "Historial: ${history.joinToString(" · ") { it.score }}",
-                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = MonoFamily),
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontFeatureSettings = "tnum"
+                        ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         }
-
-        Spacer(Modifier.height(4.dp))
     }
 }
 
@@ -148,6 +151,7 @@ private fun BenchButton(label: String, running: String?, modifier: Modifier = Mo
         onClick = onClick,
         enabled = running == null,
         modifier = modifier,
+        shape = RoundedCornerShape(999.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary

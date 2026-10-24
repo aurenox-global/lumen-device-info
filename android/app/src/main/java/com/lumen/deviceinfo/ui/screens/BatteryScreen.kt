@@ -1,6 +1,8 @@
 package com.lumen.deviceinfo.ui.screens
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,17 +10,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,19 +32,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lumen.deviceinfo.LumenViewModel
 import com.lumen.deviceinfo.data.NA
 import com.lumen.deviceinfo.ui.components.DividerLine
+import com.lumen.deviceinfo.ui.components.GlassCard
 import com.lumen.deviceinfo.ui.components.InfoRow
-import com.lumen.deviceinfo.ui.components.LumenCard
 import com.lumen.deviceinfo.ui.components.SectionHeader
 import com.lumen.deviceinfo.ui.components.Sparkline
-import com.lumen.deviceinfo.ui.theme.Mint
-import com.lumen.deviceinfo.ui.theme.MonoFamily
-import com.lumen.deviceinfo.ui.theme.Warn
+import com.lumen.deviceinfo.ui.theme.LocalLumenColors
 import java.util.Locale
 import kotlin.math.ceil
 
 @Composable
 fun BatteryScreen(vm: LumenViewModel) {
     val state by vm.uiState.collectAsStateWithLifecycle()
+    val lumen = LocalLumenColors.current
     val level = if (state.battery.level >= 0) state.battery.level else 0
     val health = state.battery.healthInfo
     val history = state.batteryHistory
@@ -48,47 +53,45 @@ fun BatteryScreen(vm: LumenViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
+            .padding(horizontal = 20.dp)
+            .padding(top = 12.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        LumenCard {
+        SectionHeader("Nivel")
+        GlassCard {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "$level%",
-                    fontSize = 64.sp,
-                    lineHeight = 66.sp,
-                    fontFamily = MonoFamily,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Mint
-                )
-                Column(horizontalAlignment = Alignment.End) {
+                BatteryRing(level = level)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 18.dp)
+                ) {
+                    Text(
+                        text = "$level%",
+                        fontSize = 56.sp,
+                        lineHeight = 60.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                     Text(
                         text = state.battery.status,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = state.battery.plugged,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = lumen.textTertiary
                     )
                 }
             }
-            Spacer(Modifier.height(10.dp))
-            LinearProgressIndicator(
-                progress = { level / 100f },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                color = Mint,
-                trackColor = MaterialTheme.colorScheme.outline
-            )
             if (health.remaining != NA) {
+                Spacer(Modifier.height(12.dp))
+                DividerLine()
                 Spacer(Modifier.height(10.dp))
                 Text(
                     text = "Tiempo restante estimado: ${health.remaining}",
@@ -99,7 +102,7 @@ fun BatteryScreen(vm: LumenViewModel) {
         }
 
         SectionHeader("Salud")
-        LumenCard {
+        GlassCard {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -110,20 +113,21 @@ fun BatteryScreen(vm: LumenViewModel) {
                         text = if (sohAvailable) health.sohPercent else "No disponible",
                         fontSize = if (sohAvailable) 36.sp else 20.sp,
                         lineHeight = if (sohAvailable) 40.sp else 26.sp,
-                        fontFamily = MonoFamily,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (sohAvailable) Mint else MaterialTheme.colorScheme.onSurfaceVariant
+                        style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"),
+                        color = if (sohAvailable) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = "Salud estimada (SoH)",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = lumen.textTertiary
                     )
                 }
                 Text(
                     text = health.source,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = lumen.textTertiary
                 )
             }
             Spacer(Modifier.height(12.dp))
@@ -141,63 +145,41 @@ fun BatteryScreen(vm: LumenViewModel) {
         }
 
         SectionHeader("Historial")
-        LumenCard {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "NIVEL",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = if (level > 0) "$level%" else NA,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = MonoFamily,
-                    color = Mint
-                )
-            }
+        GlassCard {
+            Text(
+                text = "NIVEL",
+                style = MaterialTheme.typography.labelSmall,
+                color = lumen.textTertiary
+            )
+            Spacer(Modifier.height(6.dp))
             Sparkline(
                 values = history.map { it.level.toFloat() },
-                color = Mint,
+                color = MaterialTheme.colorScheme.primary,
                 maxValue = 100f
             )
-            Spacer(Modifier.height(10.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "TEMPERATURA",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = state.battery.temperature,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = MonoFamily,
-                    color = Warn
-                )
-            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = "TEMPERATURA",
+                style = MaterialTheme.typography.labelSmall,
+                color = lumen.textTertiary
+            )
+            Spacer(Modifier.height(6.dp))
             val maxTemp = history.maxOfOrNull { it.tempC } ?: 40f
             Sparkline(
                 values = history.map { it.tempC },
-                color = Warn,
+                color = lumen.warning,
                 maxValue = ceil(maxTemp.coerceAtLeast(40f) / 5f) * 5f
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = historySpanText(history.size, history.firstOrNull()?.ts, history.lastOrNull()?.ts),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = lumen.textTertiary
             )
         }
 
         SectionHeader("Estado")
-        LumenCard {
+        GlassCard {
             InfoRow("Nivel", "$level%")
             InfoRow("Estado", state.battery.status)
             InfoRow("Salud del sistema", state.battery.health)
@@ -207,14 +189,54 @@ fun BatteryScreen(vm: LumenViewModel) {
         }
 
         SectionHeader("Mediciones")
-        LumenCard {
+        GlassCard {
             InfoRow("Temperatura", state.battery.temperature)
             InfoRow("Voltaje", state.battery.voltage)
             InfoRow("Corriente", state.battery.current)
             InfoRow("Potencia", state.battery.power)
         }
+    }
+}
 
-        Spacer(Modifier.height(4.dp))
+@Composable
+private fun BatteryRing(level: Int) {
+    val primary = MaterialTheme.colorScheme.primary
+    val track = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+    Box(modifier = Modifier.size(92.dp), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.size(92.dp)) {
+            val stroke = 9.dp.toPx()
+            val inset = stroke / 2
+            val arcSize = Size(size.width - stroke, size.height - stroke)
+            val sweep = 360f * (level.coerceIn(0, 100) / 100f)
+            drawArc(
+                color = track,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = Offset(inset, inset),
+                size = arcSize,
+                style = Stroke(width = stroke, cap = StrokeCap.Round)
+            )
+            if (sweep > 0f) {
+                drawArc(
+                    brush = Brush.sweepGradient(
+                        listOf(primary, primary.copy(alpha = 0.55f))
+                    ),
+                    startAngle = -90f,
+                    sweepAngle = sweep,
+                    useCenter = false,
+                    topLeft = Offset(inset, inset),
+                    size = arcSize,
+                    style = Stroke(width = stroke, cap = StrokeCap.Round)
+                )
+            }
+        }
+        Text(
+            text = "$level%",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 

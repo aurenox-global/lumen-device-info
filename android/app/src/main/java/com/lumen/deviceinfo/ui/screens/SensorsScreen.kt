@@ -17,10 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lumen.deviceinfo.LumenViewModel
+import com.lumen.deviceinfo.ui.components.GlassCard
 import com.lumen.deviceinfo.ui.components.InfoRow
-import com.lumen.deviceinfo.ui.components.LumenCard
 import com.lumen.deviceinfo.ui.components.SectionHeader
-import com.lumen.deviceinfo.ui.theme.MonoFamily
 
 @Composable
 fun SensorsScreen(vm: LumenViewModel) {
@@ -36,12 +35,13 @@ fun SensorsScreen(vm: LumenViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
+            .padding(horizontal = 20.dp)
+            .padding(top = 12.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         SectionHeader("Sensores (${sensors.size})")
         if (sensors.isEmpty()) {
-            LumenCard {
+            GlassCard {
                 Text(
                     text = "No se detectaron sensores.",
                     style = MaterialTheme.typography.bodyMedium,
@@ -50,7 +50,7 @@ fun SensorsScreen(vm: LumenViewModel) {
             }
         }
         sensors.forEach { s ->
-            LumenCard {
+            GlassCard {
                 Text(
                     text = s.name,
                     style = MaterialTheme.typography.titleSmall,

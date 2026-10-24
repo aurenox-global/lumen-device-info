@@ -9,7 +9,7 @@ con una interfaz propia más limpia.
 ## Qué incluye
 
 ### Android (Kotlin · Jetpack Compose · Material 3)
-- **Inicio**: dispositivo, SoC, versión de Android y métricas en vivo (RAM, almacenamiento, batería, CPU).
+- **Inicio**: nombre real del dispositivo, SoC, versión de Android y métricas en vivo (RAM, almacenamiento, batería, CPU).
 - **Hardware**: núcleos y frecuencias por núcleo, GPU (EGL), pantalla, memoria, almacenamiento, cámaras, Bluetooth.
 - **Batería**: nivel, estado, salud, temperatura, voltaje, corriente, potencia e historial.
 - **Sistema**: Android/SDK, parche de seguridad, kernel, build, uptime, ABIs, locale.
@@ -30,8 +30,11 @@ con una interfaz propia más limpia.
 
 ## Diseño
 
-Minimalismo oscuro: fondo casi negro, tarjetas con borde de 1 px, un único acento menta (`#9BE8C0`),
-valores en tipografía monoespaciada e iconos vectoriales geométricos.
+Identidad **ColorOS 17 / Living Flow**: tema claro por defecto (y oscuro), capas translúcidas,
+gradientes ambientales aqua/azul/lavanda, esquinas de 28 px, botones píldora y un único acento aqua (`#00BFA6`).
+
+El nombre real del dispositivo se resuelve con `Settings.Global.device_name`, las propiedades
+`ro.product.marketname` y, como último recurso, marca + modelo limpios.
 
 ## Capturas
 

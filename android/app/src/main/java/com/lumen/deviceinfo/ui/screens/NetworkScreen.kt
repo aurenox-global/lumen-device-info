@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -24,22 +23,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lumen.deviceinfo.LumenViewModel
-import com.lumen.deviceinfo.data.NA
 import com.lumen.deviceinfo.ui.components.DividerLine
+import com.lumen.deviceinfo.ui.components.GlassCard
 import com.lumen.deviceinfo.ui.components.InfoRow
-import com.lumen.deviceinfo.ui.components.LumenCard
 import com.lumen.deviceinfo.ui.components.SectionHeader
-import com.lumen.deviceinfo.ui.theme.Mint
-import com.lumen.deviceinfo.ui.theme.MonoFamily
+import com.lumen.deviceinfo.ui.theme.LocalLumenColors
 
 @Composable
 fun NetworkScreen(vm: LumenViewModel) {
     val state by vm.uiState.collectAsStateWithLifecycle()
+    val lumen = LocalLumenColors.current
     val sim = state.sim
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {
-        // Concedido o denegado: releemos; el estado real manda.
         vm.refreshNow()
     }
 
@@ -47,11 +44,12 @@ fun NetworkScreen(vm: LumenViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
+            .padding(horizontal = 20.dp)
+            .padding(top = 12.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         SectionHeader("SIM y eSIM")
-        LumenCard {
+        GlassCard {
             InfoRow("eSIM compatible", sim.esimSupported)
             InfoRow("eUICC habilitado", sim.euiccEnabled)
             InfoRow("Ranuras SIM", sim.slots)
@@ -65,7 +63,6 @@ fun NetworkScreen(vm: LumenViewModel) {
                     Text(
                         text = line,
                         style = MaterialTheme.typography.bodySmall,
-                        fontFamily = MonoFamily,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(vertical = 3.dp)
                     )
@@ -76,7 +73,7 @@ fun NetworkScreen(vm: LumenViewModel) {
                 Text(
                     text = "Permiso concedido · operador y ranuras leídos con READ_PHONE_STATE.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Mint
+                    color = MaterialTheme.colorScheme.primary
                 )
             } else {
                 if (sim.permission == "No concedido") {
@@ -89,16 +86,13 @@ fun NetworkScreen(vm: LumenViewModel) {
                 }
                 OutlinedButton(
                     onClick = { permissionLauncher.launch(Manifest.permission.READ_PHONE_STATE) },
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, Mint)
+                    shape = RoundedCornerShape(999.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
                 ) {
                     Text(
                         text = "Permitir para leer SIMs",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = MonoFamily,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = Mint
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -109,12 +103,12 @@ fun NetworkScreen(vm: LumenViewModel) {
                 text = "Leer el EID o los perfiles eSIM requiere privilegios del operador o del sistema; " +
                     "no es posible en una app normal. Aquí solo se consulta la compatibilidad pública.",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = lumen.textTertiary
             )
         }
 
         SectionHeader("Conexión")
-        LumenCard {
+        GlassCard {
             InfoRow("Transporte", state.network.transport)
             InfoRow("Interfaz", state.network.interfaceName)
             InfoRow("Ancho de banda", state.network.linkSpeed)
@@ -123,7 +117,7 @@ fun NetworkScreen(vm: LumenViewModel) {
         }
 
         SectionHeader("Operador")
-        LumenCard {
+        GlassCard {
             InfoRow("Operador", state.network.operator)
             InfoRow("Tipo de red", state.network.networkType)
             InfoRow("Roaming", state.network.roaming)
@@ -132,13 +126,11 @@ fun NetworkScreen(vm: LumenViewModel) {
         }
 
         SectionHeader("Direcciones")
-        LumenCard {
+        GlassCard {
             InfoRow("IPv4", state.network.ipv4)
             InfoRow("IPv6", state.network.ipv6)
             InfoRow("DNS", state.network.dns)
             InfoRow("MTU", state.network.mtu)
         }
-
-        Spacer(Modifier.height(4.dp))
     }
 }

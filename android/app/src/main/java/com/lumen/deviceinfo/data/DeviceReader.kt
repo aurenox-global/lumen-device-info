@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.provider.Settings
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.hardware.camera2.CameraCharacteristics
@@ -39,10 +40,113 @@ import javax.microedition.khronos.egl.EGLContext
 class DeviceReader(private val context: Context) {
 
     fun readDeviceSummary(): DeviceSummary {
-        val model = safe { "${Build.MANUFACTURER} ${Build.MODEL}".trim() } ?: NA
+        val resolved = resolveDeviceName()
         val soc = readSoc()
         val os = safe { "Android ${Build.VERSION.RELEASE}" } ?: NA
-        return DeviceSummary(model = model, soc = soc, os = os)
+        return DeviceSummary(
+            name = resolved.name,
+            modelCode = Build.MODEL.ifBlank { NA },
+            manufacturer = resolved.manufacturer,
+            nameSource = resolved.source,
+            soc = soc,
+            os = os
+        )
+    }
+
+    data class ResolvedName(
+        val name: String,
+        val manufacturer: String,
+        val source: String
+    )
+
+    /**
+     * Resolvedor del nombre real del dispositivo, por prioridad:
+     *  1. `Settings.Global device_name` (nombre puesto por el usuario).
+     *  2. Propiedades de marketing vía `getprop`: ro.product.marketname,
+     *     ro.product.odm.marketname, ro.vendor.product.marketname,
+     *     ro.system.product.marketname, ro.product.model.
+     *  3. Build.MANUFACTURER + Build.MODEL, limpiando duplicados y capitalizando.
+     * Nunca inventa: si solo hay código, devuelve el código limpio.
+     */
+    fun resolveDeviceName(): ResolvedName {
+        // 1) Nombre de usuario (Bluetooth device_name compartido).
+        val user = safe { Settings.Global.getString(context.contentResolver, "device_name") }
+        if (!user.isNullOrBlank()) {
+            return ResolvedName(user.trim(), cleanManufacturer(), "device_name")
+        }
+
+        // 2) Marketing names vía getprop / SystemProperties.
+        for (prop in MARKETING_PROPS) {
+            val v = readSystemProperty(prop)
+            if (!v.isNullOrBlank()) {
+                return ResolvedName(v.trim(), cleanManufacturer(), "getprop:$prop")
+            }
+        }
+
+        // 3) Fallback: MANUFACTURER + MODEL limpio.
+        val man = Build.MANUFACTURER?.trim().orEmpty()
+        val model = Build.MODEL?.trim().orEmpty()
+        val cleanModel = model.ifBlank { NA }
+        val name = joinNoDuplicate(man, model)
+        return ResolvedName(
+            name = name.ifBlank { cleanModel },
+            manufacturer = cleanManufacturer(),
+            source = "Build"
+        )
+    }
+
+    private fun cleanManufacturer(): String {
+        val raw = Build.MANUFACTURER?.trim().orEmpty()
+        return if (raw.isBlank()) NA else capitalizeWords(raw)
+    }
+
+    private fun joinNoDuplicate(manufacturer: String, model: String): String {
+        val m = manufacturer.trim()
+        val mod = model.trim()
+        if (mod.isBlank()) return m.ifBlank { NA }
+        if (m.isBlank()) return mod
+        // Evita "Google Google Pixel 9" y duplicados tipo "Samsung Samsung".
+        val mNorm = m.lowercase(Locale.ROOT)
+        val modNorm = mod.lowercase(Locale.ROOT)
+        return when {
+            modNorm.startsWith(mNorm) -> capitalizeWords(mod)
+            mNorm.startsWith(modNorm) -> capitalizeWords(m)
+            else -> "${capitalizeWords(m)} ${capitalizeWords(mod)}".trim()
+        }
+    }
+
+    private fun capitalizeWords(value: String): String =
+        value.split(Regex("[\\s_]+"))
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { w ->
+                if (w.all { it.isUpperCase() || it.isDigit() }) w
+                else w.lowercase(Locale.ROOT).replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
+            }
+
+    /**
+     * Lee una propiedad del sistema vía reflexión a `android.os.SystemProperties`
+     * y, como alternativa, vía `getprop`. Con timeout y try/catch (nunca bloquea).
+     */
+    private fun readSystemProperty(prop: String): String? {
+        // Intento 1: reflexión (rápido, sin proceso externo).
+        try {
+            val cls = Class.forName("android.os.SystemProperties")
+            val get = cls.getMethod("get", String::class.java)
+            val value = get.invoke(null, prop) as? String
+            if (!value.isNullOrBlank()) return value
+        } catch (t: Throwable) {
+            // cae al fallback
+        }
+        // Intento 2: getprop (solo si la reflexión no devolvió nada).
+        return try {
+            val p = Runtime.getRuntime().exec(arrayOf("getprop", prop))
+            val text = p.inputStream.bufferedReader().use { it.readText() }.trim()
+            // Timeout suave: si no termina pronto, lo matamos y devolvemos null.
+            if (!p.waitFor(800, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                try { p.destroy() } catch (t: Throwable) { }
+                null
+            } else text.ifBlank { null }
+        } catch (t: Throwable) { null }
     }
 
     private fun readSoc(): String {
@@ -537,6 +641,7 @@ class DeviceReader(private val context: Context) {
         val hours = (uptime % 86_400_000) / 3_600_000
         val mins = (uptime % 3_600_000) / 60_000
         val uptimeStr = if (days > 0) "${days}d ${hours}h ${mins}m" else if (hours > 0) "${hours}h ${mins}m" else "${mins}m"
+        val deviceName = resolveDeviceName().name
         return SystemInfoModel(
             androidVersion = Build.VERSION.RELEASE.ifBlank { NA },
             sdk = "API ${Build.VERSION.SDK_INT}",
@@ -556,6 +661,7 @@ class DeviceReader(private val context: Context) {
             brand = Build.BRAND.ifBlank { NA },
             model = Build.MODEL.ifBlank { NA },
             device = Build.DEVICE.ifBlank { NA },
+            deviceName = deviceName,
             soc = readSoc(),
             oem = safe { Build.getRadioVersion()?.ifBlank { NA } } ?: NA
         )
@@ -682,6 +788,15 @@ class DeviceReader(private val context: Context) {
         )
         private const val MIN_CAPACITY_UAH = 100_000L      // 100 mAh
         private const val MAX_CAPACITY_UAH = 30_000_000L   // 30 Ah
+
+        /** Propiedades de marketing que exponen el nombre comercial real. */
+        private val MARKETING_PROPS = listOf(
+            "ro.product.marketname",
+            "ro.product.odm.marketname",
+            "ro.vendor.product.marketname",
+            "ro.system.product.marketname",
+            "ro.product.model"
+        )
     }
 
     private fun safe(block: () -> String?): String? = try { block() } catch (e: Exception) { null }

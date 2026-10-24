@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -26,8 +29,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lumen.deviceinfo.LumenViewModel
+import com.lumen.deviceinfo.ui.components.GlassCard
 import com.lumen.deviceinfo.ui.components.InfoRow
-import com.lumen.deviceinfo.ui.components.LumenCard
 import com.lumen.deviceinfo.ui.components.SectionHeader
 import com.lumen.deviceinfo.ui.theme.ThemeMode
 
@@ -40,11 +43,12 @@ fun SettingsScreen(vm: LumenViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
+            .padding(horizontal = 20.dp)
+            .padding(top = 12.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         SectionHeader("Apariencia")
-        LumenCard {
+        GlassCard {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -52,10 +56,13 @@ fun SettingsScreen(vm: LumenViewModel) {
             ) {
                 Text("Modo oscuro", style = MaterialTheme.typography.bodyMedium)
                 Switch(
-                    checked = state.themeMode != ThemeMode.LIGHT,
+                    checked = state.themeMode == ThemeMode.DARK,
                     onCheckedChange = { dark ->
                         vm.setThemeMode(if (dark) ThemeMode.DARK else ThemeMode.LIGHT)
-                    }
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedTrackColor = MaterialTheme.colorScheme.primary
+                    )
                 )
             }
             Row(
@@ -67,14 +74,17 @@ fun SettingsScreen(vm: LumenViewModel) {
                 Switch(
                     checked = state.themeMode == ThemeMode.SYSTEM,
                     onCheckedChange = { use ->
-                        vm.setThemeMode(if (use) ThemeMode.SYSTEM else ThemeMode.DARK)
-                    }
+                        vm.setThemeMode(if (use) ThemeMode.SYSTEM else ThemeMode.LIGHT)
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedTrackColor = MaterialTheme.colorScheme.primary
+                    )
                 )
             }
         }
 
         SectionHeader("Datos")
-        LumenCard {
+        GlassCard {
             ActionRow("Exportar informe") {
                 val report = vm.buildReport()
                 val intent = Intent(Intent.ACTION_SEND).apply {
@@ -87,14 +97,12 @@ fun SettingsScreen(vm: LumenViewModel) {
         }
 
         SectionHeader("Acerca de")
-        LumenCard {
-            InfoRow("App", "Lumen", mono = false)
-            InfoRow("Versión", "1.0.0")
-            InfoRow("Inspirada en", "DevCheck", mono = false)
-            InfoRow("Privacidad", "Sin anuncios ni telemetría", mono = false)
+        GlassCard {
+            InfoRow("App", "Lumen")
+            InfoRow("Versión", "1.2.0")
+            InfoRow("Diseño", "ColorOS 17")
+            InfoRow("Privacidad", "Sin anuncios ni telemetría")
         }
-
-        Spacer(Modifier.height(4.dp))
     }
 }
 
@@ -103,13 +111,17 @@ private fun ActionRow(label: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(label, style = MaterialTheme.typography.bodyMedium)
-        Text("→", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary
+        )
     }
 }
