@@ -36,8 +36,7 @@ val bottomItems = listOf(
     BottomItem(Screen.HOME, Icons.Filled.Home),
     BottomItem(Screen.HARDWARE, Icons.Filled.Memory),
     BottomItem(Screen.BATTERY, Icons.Filled.BatteryChargingFull),
-    BottomItem(Screen.SYSTEM, Icons.Filled.Info),
-    BottomItem(Screen.MORE, Icons.Filled.GridView)
+    BottomItem(Screen.SYSTEM, Icons.Filled.Info)
 )
 
 data class MoreItem(val screen: Screen, val icon: ImageVector, val subtitle: String)

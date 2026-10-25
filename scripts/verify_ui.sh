@@ -69,7 +69,6 @@ PY
 
 tap_text "Hardware" shots/android-hardware.png
 tap_text "Batería" shots/android-bateria.png
-tap_text "Más" shots/android-mas.png
 
 echo "== tamaño de capturas =="
 ls -lh shots/android-inicio.png shots/android-hardware.png shots/android-bateria.png shots/android-mas.png

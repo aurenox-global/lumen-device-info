@@ -58,7 +58,7 @@ fun LumenApp(vm: LumenViewModel) {
     val themeMode = uiState.themeMode
     LumenTheme(themeMode = themeMode) {
         BackHandler(enabled = !isBottom) {
-            currentRoute = Screen.MORE.route
+            currentRoute = if (currentRoute == Screen.MORE.route) Screen.SYSTEM.route else Screen.MORE.route
         }
 
         Box(
@@ -77,7 +77,7 @@ fun LumenApp(vm: LumenViewModel) {
                     Screen.HOME -> HomeScreen(vm) { currentRoute = it }
                     Screen.HARDWARE -> HardwareScreen(vm)
                     Screen.BATTERY -> BatteryScreen(vm)
-                    Screen.SYSTEM -> SystemScreen(vm)
+                    Screen.SYSTEM -> SystemScreen(vm, onOpenMore = { currentRoute = Screen.MORE.route })
                     Screen.MORE -> MoreScreen { currentRoute = it }
                     Screen.NETWORK -> NetworkScreen(vm)
                     Screen.SENSORS -> SensorsScreen(vm)
