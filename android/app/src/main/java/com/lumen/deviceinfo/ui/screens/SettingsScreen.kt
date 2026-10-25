@@ -99,7 +99,7 @@ fun SettingsScreen(vm: LumenViewModel) {
         SectionHeader("Acerca de")
         GlassCard {
             InfoRow("App", "Lumen")
-            InfoRow("Versión", "1.3.0")
+            InfoRow("Versión", com.lumen.deviceinfo.BuildConfig.VERSION_NAME)
             InfoRow("Diseño", "ColorOS 17")
             InfoRow("Privacidad", "Sin anuncios ni telemetría")
         }

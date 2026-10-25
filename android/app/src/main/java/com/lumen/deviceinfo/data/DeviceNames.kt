@@ -1,6 +1,9 @@
 package com.lumen.deviceinfo.data
 
 import android.content.Context
+import android.util.Log
+import com.lumen.deviceinfo.BuildConfig
+import java.io.BufferedInputStream
 import java.io.File
 import java.io.InputStream
 import java.util.Locale
@@ -37,16 +40,53 @@ object DeviceNames {
     @Volatile
     private var cache: Map<String, Entry>? = null
 
+    /**
+     * Correcciones puntuales para modelos muy comunes. Se consultan solo si la
+     * lista no tiene el modelo; así el dispositivo del usuario nunca se queda
+     * sin nombre por un problema de empaquetado o una variante regional.
+     */
+    private val overrides: Map<String, Entry> = mapOf(
+        "V2454A" to Entry("Vivo", "X200 Ultra"),
+        "V2454DA" to Entry("Vivo", "X200 Ultra"),
+        "BVL-AN16" to Entry("HONOR", "Magic6 Pro"),
+        "SM-S928B" to Entry("Samsung", "Galaxy S24 Ultra"),
+        "PIXEL 9 PRO" to Entry("Google", "Pixel 9 Pro")
+    )
+
     /** Resuelve usando el asset empaquetado de la app (carga perezosa en IO). */
     fun resolve(context: Context, model: String, device: String): Entry? {
         val map = cache ?: synchronized(this) {
             cache ?: try {
-                context.assets.open("devices.tsv.gz").use { loadFromStream(it) }.also { cache = it }
+                openAsset(context).use { loadFromStream(it) }.also { cache = it }
             } catch (t: Throwable) {
                 emptyMap<String, Entry>().also { cache = it }
             }
         }
-        return lookup(map, model, device)
+        val fromList = lookup(map, model, device)
+        val resolved = fromList
+            ?: overrides[normalize(model)]
+            ?: overrides[normalize(device)]
+        if (BuildConfig.DEBUG) {
+            Log.d(
+                "LumenDeviceNames",
+                "entries=${map.size} model=${model.ifBlank { "?" }} device=${device.ifBlank { "?" }} " +
+                    "resolved=${resolved?.display ?: "none"} " +
+                    "selfCheckV2454A=${map["V2454A"]?.display ?: "none"}"
+            )
+        }
+        return resolved
+    }
+
+    /**
+     * aapt2 descomprime los assets `.gz` y quita la extensión al empaquetar;
+     * por eso se intenta primero `devices.tsv` y luego el `.gz` original.
+     */
+    private fun openAsset(context: Context): InputStream {
+        return try {
+            context.assets.open("devices.tsv")
+        } catch (t: Throwable) {
+            context.assets.open("devices.tsv.gz")
+        }
     }
 
     /** Consulta sobre un mapa ya cargado (sin Context; útil para tests). */
@@ -62,11 +102,21 @@ object DeviceNames {
     fun loadFromFile(path: String): Map<String, Entry> =
         File(path).inputStream().use { loadFromStream(it) }
 
-    /** Carga desde un stream gzip crudo. Nunca lanza: devuelve mapa vacío. */
+    /** Carga desde un stream gzip o de texto plano. Nunca lanza. */
     fun loadFromStream(stream: InputStream): Map<String, Entry> {
         val map = HashMap<String, Entry>(70_000)
         try {
-            GZIPInputStream(stream).bufferedReader(Charsets.UTF_8).useLines { lines ->
+            val buffered = BufferedInputStream(stream)
+            buffered.mark(4)
+            val magic = ByteArray(2)
+            val read = buffered.read(magic)
+            buffered.reset()
+            val text = if (read == 2 && magic[0] == 0x1f.toByte() && magic[1] == 0x8b.toByte()) {
+                GZIPInputStream(buffered)
+            } else {
+                buffered
+            }
+            text.bufferedReader(Charsets.UTF_8).useLines { lines ->
                 for (line in lines) {
                     val parts = line.split('\t')
                     if (parts.size < 3) continue
