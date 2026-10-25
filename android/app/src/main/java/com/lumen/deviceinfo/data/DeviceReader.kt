@@ -14,6 +14,7 @@ import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
+import android.media.MediaRecorder
 import android.hardware.display.DisplayManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -60,22 +61,42 @@ class DeviceReader(private val context: Context) {
     )
 
     /**
-     * Resolvedor del nombre real del dispositivo, por prioridad:
-     *  1. `Settings.Global device_name` (nombre puesto por el usuario).
-     *  2. Propiedades de marketing vía `getprop`: ro.product.marketname,
-     *     ro.product.odm.marketname, ro.vendor.product.marketname,
-     *     ro.system.product.marketname, ro.product.model.
-     *  3. Build.MANUFACTURER + Build.MODEL, limpiando duplicados y capitalizando.
+     * Resolvedor del nombre comercial real del dispositivo, por prioridad:
+     *  a) Lista oficial de Google (`devices.tsv.gz`): Build.MODEL exacto, luego
+     *     Build.DEVICE y por último quitando sufijos habituales (-AN00, 5G, …).
+     *  b) Si hay match: «Marca Nombre» evitando duplicar la marca.
+     *  c) Si no, `Settings.Global device_name` SOLO si no es igual al código.
+     *  d) Luego ro.product.marketname y variantes vía getprop.
+     *  e) Fallback: Build.MANUFACTURER + Build.MODEL limpios.
      * Nunca inventa: si solo hay código, devuelve el código limpio.
      */
     fun resolveDeviceName(): ResolvedName {
-        // 1) Nombre de usuario (Bluetooth device_name compartido).
-        val user = safe { Settings.Global.getString(context.contentResolver, "device_name") }
-        if (!user.isNullOrBlank()) {
-            return ResolvedName(user.trim(), cleanManufacturer(), "device_name")
+        // a+b) Lista oficial de dispositivos de Google.
+        val entry = DeviceNames.resolve(
+            context,
+            Build.MODEL?.trim().orEmpty(),
+            Build.DEVICE?.trim().orEmpty()
+        )
+        if (entry != null) {
+            return ResolvedName(
+                name = entry.display,
+                manufacturer = entry.brand.ifBlank { cleanManufacturer() },
+                source = "devices.tsv"
+            )
         }
 
-        // 2) Marketing names vía getprop / SystemProperties.
+        // c) Nombre de usuario (device_name) solo si no es el código de modelo.
+        val user = safe { Settings.Global.getString(context.contentResolver, "device_name") }
+        if (!user.isNullOrBlank()) {
+            val u = user.trim()
+            val equalsModel = Build.MODEL?.trim()?.equals(u, ignoreCase = true) == true ||
+                Build.DEVICE?.trim()?.equals(u, ignoreCase = true) == true
+            if (!equalsModel) {
+                return ResolvedName(u, cleanManufacturer(), "device_name")
+            }
+        }
+
+        // d) Marketing names vía getprop / SystemProperties.
         for (prop in MARKETING_PROPS) {
             val v = readSystemProperty(prop)
             if (!v.isNullOrBlank()) {
@@ -83,7 +104,7 @@ class DeviceReader(private val context: Context) {
             }
         }
 
-        // 3) Fallback: MANUFACTURER + MODEL limpio.
+        // e) Fallback: MANUFACTURER + MODEL limpio.
         val man = Build.MANUFACTURER?.trim().orEmpty()
         val model = Build.MODEL?.trim().orEmpty()
         val cleanModel = model.ifBlank { NA }
@@ -328,6 +349,224 @@ class DeviceReader(private val context: Context) {
             CameraInfo(ids.size, details)
         } catch (e: Exception) { CameraInfo() }
     }
+
+    /**
+     * Detalle completo de cada cámara lógica con Camera2 (try/catch por API y
+     * por dispositivo). Cada valor no expuesto se muestra como «No disponible».
+     */
+    fun readCameraDetails(): List<CameraDetail> {
+        return try {
+            val cm = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+            val ids = cm.cameraIdList.toList()
+            val out = mutableListOf<CameraDetail>()
+            var back = 0
+            var front = 0
+            var ext = 0
+            for (id in ids) {
+                try {
+                    val chars = cm.getCameraCharacteristics(id)
+                    val facing = chars.get(CameraCharacteristics.LENS_FACING)
+                    val facingStr = facingName(facing)
+                    val title = when (facing) {
+                        CameraCharacteristics.LENS_FACING_BACK -> {
+                            back++
+                            if (back == 1) "Trasera principal" else "Trasera $back"
+                        }
+                        CameraCharacteristics.LENS_FACING_FRONT -> {
+                            front++
+                            if (front == 1) "Frontal" else "Frontal $front"
+                        }
+                        CameraCharacteristics.LENS_FACING_EXTERNAL -> {
+                            ext++
+                            if (ext == 1) "Externa" else "Externa $ext"
+                        }
+                        else -> {
+                            ext++
+                            "Cámara $ext"
+                        }
+                    }
+                    out += buildCameraDetail(id, title, facingStr, chars, cm)
+                } catch (e: Exception) {
+                    // cámara no legible: se omite
+                }
+            }
+            out
+        } catch (e: Exception) { emptyList() }
+    }
+
+    private fun buildCameraDetail(
+        id: String,
+        title: String,
+        facing: String,
+        chars: CameraCharacteristics,
+        cm: CameraManager
+    ): CameraDetail {
+        val isLogical = isLogicalCamera(chars)
+        val physicalIds = if (Build.VERSION.SDK_INT >= 28) {
+            try { chars.physicalCameraIds?.toList() ?: emptyList() } catch (e: Exception) { emptyList() }
+        } else emptyList()
+        val physicalLenses = if (isLogical && physicalIds.isNotEmpty()) {
+            physicalIds.mapNotNull { pid ->
+                try {
+                    val pc = cm.getCameraCharacteristics(pid)
+                    PhysicalLens(id = pid, lens = lensBasics(pc))
+                } catch (e: Exception) { null }
+            }
+        } else emptyList()
+
+        return CameraDetail(
+            id = id,
+            title = title,
+            facing = facing,
+            isLogical = isLogical,
+            physicalIds = physicalIds,
+            lens = lensBasics(chars),
+            ois = opticalStabilization(chars),
+            flash = flashAvailable(chars),
+            afModes = afModes(chars),
+            isoRange = isoRange(chars),
+            raw = rawSupport(chars),
+            hardwareLevel = hardwareLevel(chars),
+            maxZoom = maxZoom(chars),
+            videoMax = videoMax(chars),
+            physicalLenses = physicalLenses
+        )
+    }
+
+    private fun facingName(facing: Int?): String = when (facing) {
+        CameraCharacteristics.LENS_FACING_FRONT -> "Frontal"
+        CameraCharacteristics.LENS_FACING_BACK -> "Trasera"
+        CameraCharacteristics.LENS_FACING_EXTERNAL -> "Externa"
+        else -> "Desconocida"
+    }
+
+    private fun isLogicalCamera(chars: CameraCharacteristics): Boolean = try {
+        chars.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
+            ?.any { it == CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA } == true
+    } catch (e: Exception) { false }
+
+    private fun lensBasics(chars: CameraCharacteristics): LensData {
+        val streamMap = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+        val jpegSizes = try { streamMap?.getOutputSizes(android.graphics.ImageFormat.JPEG) } catch (e: Exception) { null }
+        val maxJpeg = jpegSizes?.maxByOrNull { it.width * it.height }
+        val maxJpegStr = maxJpeg?.let { "${it.width} × ${it.height}" } ?: NA
+        val mpStr = maxJpeg?.let { "%.1f MP".format(it.width * it.height / 1_000_000.0) } ?: NA
+
+        val active = try { chars.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE) } catch (e: Exception) { null }
+        val activeStr = active?.let { "${it.width()} × ${it.height()}" } ?: NA
+        val physical = try { chars.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE) } catch (e: Exception) { null }
+        val sensorSizeStr = physical?.let { "%.2f × %.2f mm".format(it.width, it.height) } ?: NA
+
+        val apertures = try { chars.get(CameraCharacteristics.LENS_INFO_AVAILABLE_APERTURES) } catch (e: Exception) { null }
+        val aperturesStr = apertures
+            ?.map { "f/%.2f".format(it.toFloat()) }
+            ?.distinct()
+            ?.joinToString(" · ") ?: NA
+
+        val focals = try { chars.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS) } catch (e: Exception) { null }
+        val focalStr = focals
+            ?.map { "%.1f mm".format(it.toFloat()) }
+            ?.distinct()
+            ?.joinToString(" · ") ?: NA
+
+        val focal35Str = if (focals != null && physical != null && physical.width > 0f) {
+            val diag = Math.sqrt((physical.width * physical.width + physical.height * physical.height).toDouble())
+            if (diag > 0) {
+                focals.map { f -> 43.2666 / diag * f.toDouble() }
+                    .map { "%.0f mm".format(it) }
+                    .distinct()
+                    .joinToString(" · ")
+            } else NA
+        } else NA
+
+        val pixelSizeStr = if (physical != null && active != null && physical.width > 0f && active.width() > 0) {
+            "%.2f µm".format(physical.width / active.width() * 1000.0)
+        } else NA
+
+        return LensData(
+            maxJpeg = maxJpegStr,
+            megapixels = mpStr,
+            sensorArray = activeStr,
+            sensorSize = sensorSizeStr,
+            apertures = aperturesStr,
+            focal = focalStr,
+            focal35mm = focal35Str,
+            pixelSize = pixelSizeStr
+        )
+    }
+
+    private fun opticalStabilization(chars: CameraCharacteristics): String = try {
+        val modes = chars.get(CameraCharacteristics.LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION) ?: return NA
+        val hasOn = modes.any { it == CameraCharacteristics.LENS_OPTICAL_STABILIZATION_MODE_ON }
+        val hasOff = modes.any { it == CameraCharacteristics.LENS_OPTICAL_STABILIZATION_MODE_OFF }
+        when {
+            modes.isEmpty() -> NA
+            hasOn && hasOff -> "Sí (conmutable)"
+            hasOn -> "Sí"
+            else -> "No"
+        }
+    } catch (e: Exception) { NA }
+
+    private fun flashAvailable(chars: CameraCharacteristics): String = try {
+        when (chars.get(CameraCharacteristics.FLASH_INFO_AVAILABLE)) {
+            true -> "Sí"
+            false -> "No"
+            null -> NA
+        }
+    } catch (e: Exception) { NA }
+
+    private fun afModes(chars: CameraCharacteristics): String = try {
+        val modes = chars.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES) ?: return NA
+        val names = mutableListOf<String>()
+        for (mode in modes) {
+            val n = when (mode) {
+                CameraCharacteristics.CONTROL_AF_MODE_OFF -> "Off"
+                CameraCharacteristics.CONTROL_AF_MODE_AUTO -> "Auto"
+                CameraCharacteristics.CONTROL_AF_MODE_MACRO -> "Macro"
+                CameraCharacteristics.CONTROL_AF_MODE_CONTINUOUS_VIDEO -> "Continuo vídeo"
+                CameraCharacteristics.CONTROL_AF_MODE_CONTINUOUS_PICTURE -> "Continuo foto"
+                CameraCharacteristics.CONTROL_AF_MODE_EDOF -> "EDoF"
+                else -> null
+            }
+            if (n != null) names.add(n)
+        }
+        names.distinct().joinToString(" · ").ifBlank { NA }
+    } catch (e: Exception) { NA }
+
+    private fun isoRange(chars: CameraCharacteristics): String = try {
+        val range = chars.get(CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE) ?: return NA
+        "${range.lower} – ${range.upper}"
+    } catch (e: Exception) { NA }
+
+    private fun rawSupport(chars: CameraCharacteristics): String = try {
+        val caps = chars.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES) ?: return NA
+        if (caps.any { it == CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW }) "Sí" else "No"
+    } catch (e: Exception) { NA }
+
+    private fun hardwareLevel(chars: CameraCharacteristics): String = try {
+        when (chars.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL)) {
+            CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY -> "LEGACY"
+            CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED -> "LIMITED"
+            CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL -> "FULL"
+            CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_3 -> "LEVEL_3"
+            CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL -> "EXTERNAL"
+            else -> NA
+        }
+    } catch (e: Exception) { NA }
+
+    private fun maxZoom(chars: CameraCharacteristics): String = try {
+        val z = chars.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) ?: return NA
+        "%.1f×".format(z)
+    } catch (e: Exception) { NA }
+
+    private fun videoMax(chars: CameraCharacteristics): String = try {
+        val map = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP) ?: return NA
+        val sizes = map.getOutputSizes(MediaRecorder::class.java) ?: return NA
+        val max = sizes.maxByOrNull { it.width * it.height } ?: return NA
+        val minDur = map.getOutputMinFrameDuration(MediaRecorder::class.java, max)
+        val fps = if (minDur > 0) (1_000_000_000L / minDur).toInt() else 0
+        if (fps in 1..960) "${max.width} × ${max.height} @ $fps fps" else "${max.width} × ${max.height}"
+    } catch (e: Exception) { NA }
 
     @Suppress("MissingPermission")
     fun readBluetooth(): BluetoothInfo {

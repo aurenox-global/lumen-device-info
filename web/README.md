@@ -24,7 +24,7 @@ La landing sigue el sistema de diseño de ColorOS 17 descrito en `../DESIGN-COLO
 
 ## Contenido
 
-- Hero con captura real de la app, chips de metadatos y descarga directa del APK 1.2.1.
+- Hero con captura real de la app, chips de metadatos y descarga directa del APK 1.3.0.
 - Ocho bloques de características (hardware, batería, eSIM, red, sensores, apps, benchmarks, privacidad).
 - Galería de capturas reales de la app en marcos redondeados.
 - Instalación en tres pasos.
@@ -75,9 +75,9 @@ rm -rf docs && mkdir docs && cp -R web/. docs/ && rm -f docs/README.md
 git add docs && git commit -m "web: ..." && git push
 ```
 
-La descarga apunta a la release `v1.2.1`:
+La descarga apunta a la release `v1.3.0`:
 
-`https://github.com/aurenox-global/lumen-device-info/releases/download/v1.2.1/lumen-debug.apk`
+`https://github.com/aurenox-global/lumen-device-info/releases/download/v1.3.0/lumen-debug.apk`
 
 ## Nota sobre el service worker
 

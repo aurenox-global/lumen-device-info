@@ -3,6 +3,7 @@ package com.lumen.deviceinfo.ui.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.BatteryChargingFull
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
@@ -19,6 +20,7 @@ enum class Screen(val route: String, val label: String) {
     BATTERY("battery", "Batería"),
     SYSTEM("system", "Sistema"),
     MORE("more", "Más"),
+    CAMERAS("cameras", "Cámaras"),
     NETWORK("network", "Red"),
     SENSORS("sensors", "Sensores"),
     APPS("apps", "Apps"),
@@ -42,6 +44,7 @@ val bottomItems = listOf(
 data class MoreItem(val screen: Screen, val icon: ImageVector, val subtitle: String)
 
 val moreItems = listOf(
+    MoreItem(Screen.CAMERAS, Icons.Filled.CameraAlt, "Detalle por lente"),
     MoreItem(Screen.NETWORK, Icons.Filled.Wifi, "Conexión y operador"),
     MoreItem(Screen.SENSORS, Icons.Filled.Sensors, "Valores en vivo"),
     MoreItem(Screen.APPS, Icons.Filled.Apps, "Lista de apps"),

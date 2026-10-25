@@ -11,6 +11,7 @@ import com.lumen.deviceinfo.data.BatteryInfo
 import com.lumen.deviceinfo.data.BatterySample
 import com.lumen.deviceinfo.data.Benchmark
 import com.lumen.deviceinfo.data.BluetoothInfo
+import com.lumen.deviceinfo.data.CameraDetail
 import com.lumen.deviceinfo.data.CameraInfo
 import com.lumen.deviceinfo.data.CpuInfo
 import com.lumen.deviceinfo.data.DeviceReader
@@ -47,6 +48,8 @@ data class UiState(
     val system: SystemInfoModel = SystemInfoModel(),
     val network: NetworkInfo = NetworkInfo(),
     val cameras: CameraInfo = CameraInfo(),
+    val cameraDetails: List<CameraDetail> = emptyList(),
+    val cameraDetailsLoaded: Boolean = false,
     val bluetooth: BluetoothInfo = BluetoothInfo(),
     val apps: List<AppInfo> = emptyList(),
     val appsLoaded: Boolean = false,
@@ -214,6 +217,14 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun loadCameraDetails() {
+        if (_uiState.value.cameraDetailsLoaded) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val details = reader.readCameraDetails()
+            _uiState.update { it.copy(cameraDetails = details, cameraDetailsLoaded = true) }
+        }
+    }
+
     fun loadAppIcon(pkg: String, onIcon: (String, android.graphics.Bitmap?) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val icon = reader.loadAppIcon(pkg)
@@ -234,6 +245,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         b.appendLine("==============================")
         b.appendLine()
         b.appendLine("Dispositivo: ${st.summary.name}")
+        b.appendLine("Nombre comercial: ${st.summary.name}")
         b.appendLine("Modelo: ${st.summary.modelCode}")
         b.appendLine("Fabricante: ${st.summary.manufacturer}")
         b.appendLine("SoC: ${st.summary.soc}")

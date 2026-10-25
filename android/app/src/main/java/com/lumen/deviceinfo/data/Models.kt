@@ -79,6 +79,43 @@ data class CameraInfo(
     val details: List<String> = emptyList()
 )
 
+/** Datos ópticos/sensor compartidos entre una cámara lógica y una física. */
+data class LensData(
+    val maxJpeg: String = NA,
+    val megapixels: String = NA,
+    val sensorArray: String = NA,
+    val sensorSize: String = NA,
+    val apertures: String = NA,
+    val focal: String = NA,
+    val focal35mm: String = NA,
+    val pixelSize: String = NA
+)
+
+/** Detalle completo de una cámara lógica leído con Camera2. */
+data class CameraDetail(
+    val id: String = NA,
+    val title: String = NA,
+    val facing: String = NA,
+    val isLogical: Boolean = false,
+    val physicalIds: List<String> = emptyList(),
+    val lens: LensData = LensData(),
+    val ois: String = NA,
+    val flash: String = NA,
+    val afModes: String = NA,
+    val isoRange: String = NA,
+    val raw: String = NA,
+    val hardwareLevel: String = NA,
+    val maxZoom: String = NA,
+    val videoMax: String = NA,
+    val physicalLenses: List<PhysicalLens> = emptyList()
+)
+
+/** Lente física de una cámara lógica multi-cámara. */
+data class PhysicalLens(
+    val id: String,
+    val lens: LensData = LensData()
+)
+
 data class BluetoothInfo(
     val supported: Boolean = false,
     val name: String = NA,

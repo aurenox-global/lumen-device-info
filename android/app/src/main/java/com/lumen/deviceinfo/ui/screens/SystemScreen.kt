@@ -70,7 +70,7 @@ fun SystemScreen(vm: LumenViewModel, onOpenMore: () -> Unit) {
 
         SectionHeader("Dispositivo")
         GlassCard {
-            InfoRow("Nombre del dispositivo", state.system.deviceName)
+            InfoRow("Nombre comercial", state.summary.name)
             DividerLine()
             InfoRow("Fabricante", state.system.manufacturer)
             InfoRow("Marca", state.system.brand)
@@ -132,7 +132,7 @@ private fun MoreOptionsCard(onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "Red, sensores, apps, tests y ajustes",
+                    text = "Cámaras, red, sensores, apps, tests y ajustes",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

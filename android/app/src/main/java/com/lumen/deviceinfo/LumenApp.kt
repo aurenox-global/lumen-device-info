@@ -37,6 +37,7 @@ import com.lumen.deviceinfo.ui.navigation.Screen
 import com.lumen.deviceinfo.ui.navigation.bottomItems
 import com.lumen.deviceinfo.ui.screens.AppsScreen
 import com.lumen.deviceinfo.ui.screens.BatteryScreen
+import com.lumen.deviceinfo.ui.screens.CamerasScreen
 import com.lumen.deviceinfo.ui.screens.HardwareScreen
 import com.lumen.deviceinfo.ui.screens.HomeScreen
 import com.lumen.deviceinfo.ui.screens.MoreScreen
@@ -75,10 +76,11 @@ fun LumenApp(vm: LumenViewModel) {
             ) {
                 when (current) {
                     Screen.HOME -> HomeScreen(vm) { currentRoute = it }
-                    Screen.HARDWARE -> HardwareScreen(vm)
+                    Screen.HARDWARE -> HardwareScreen(vm, onOpenCameras = { currentRoute = Screen.CAMERAS.route })
                     Screen.BATTERY -> BatteryScreen(vm)
                     Screen.SYSTEM -> SystemScreen(vm, onOpenMore = { currentRoute = Screen.MORE.route })
                     Screen.MORE -> MoreScreen { currentRoute = it }
+                    Screen.CAMERAS -> CamerasScreen(vm)
                     Screen.NETWORK -> NetworkScreen(vm)
                     Screen.SENSORS -> SensorsScreen(vm)
                     Screen.APPS -> AppsScreen(vm)

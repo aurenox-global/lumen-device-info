@@ -12,8 +12,8 @@ android {
         applicationId = "com.lumen.deviceinfo"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.2.1"
+        versionCode = 5
+        versionName = "1.3.0"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -59,4 +59,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
+
+    testImplementation("junit:junit:4.13.2")
 }
