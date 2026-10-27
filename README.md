@@ -84,3 +84,7 @@ python3 -m http.server 8899
 ## Licencia
 
 MIT.
+
+## Créditos
+
+Creado por **Andrés Mag** (Cuba) · [@aurenox-global](https://github.com/aurenox-global).
